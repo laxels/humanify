@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { visitAllIdentifiers } from "./local-llm-rename/visit-all-identifiers.js";
+import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 import { showPercentage } from "../progress.js";
 import { verbose } from "../verbose.js";
 import { anthropicToolUse } from "./anthropic-tool-use.js";
