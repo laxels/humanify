@@ -36,20 +36,20 @@
   "author": "Jesse Luoto",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "0.39.0",
-    "@babel/core": "^7.25.2",
-    "@babel/types": "^7.25.2",
-    "@dotenvx/dotenvx": "^1.31.2",
-    "babel-plugin-transform-beautifier": "^0.1.0",
-    "commander": "^13.0.0",
-    "webcrack": "^2.13.0"
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@babel/core": "^7.28.5",
+    "@babel/types": "^7.28.5",
+    "@dotenvx/dotenvx": "^1.51.1",
+    "babel-plugin-transform-beautifier": "^0.1.1",
+    "commander": "^14.0.2",
+    "webcrack": "^2.15.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
-    "pkgroll": "^2.4.2",
-    "typescript": "^5.5.4"
+    "pkgroll": "^2.21.4",
+    "typescript": "^5.9.3"
   },
   "private": true
 }
