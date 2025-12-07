@@ -10,7 +10,14 @@ import { verbose } from "./verbose.js";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
 
-cli()
+interface CliOptions {
+  model: string;
+  outputDir: string;
+  contextSize: string;
+  verbose?: boolean;
+}
+
+const program = cli()
   .name("humanify")
   .description("Unminify JavaScript code using Anthropic's Claude API")
   .option("-m, --model <model>", "The model to use", DEFAULT_MODEL)
@@ -21,8 +28,10 @@ cli()
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`,
   )
   .option("--verbose", "Show verbose output")
-  .argument("input", "The input minified Javascript file")
-  .action(async (filename, opts) => {
+  .argument("<input>", "The input minified Javascript file")
+  .action(async (filename: string) => {
+    const opts = program.opts<CliOptions>();
+
     if (opts.verbose) {
       verbose.enabled = true;
     }
@@ -34,5 +43,6 @@ cli()
       anthropicRename({ model: opts.model, contextWindowSize }),
       biome,
     ]);
-  })
-  .parse(process.argv);
+  });
+
+program.parse(process.argv);
