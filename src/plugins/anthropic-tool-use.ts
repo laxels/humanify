@@ -45,7 +45,6 @@ export async function anthropicToolUse<T>({
     system,
     messages: [{ role: "user", content }],
     tools: [tool],
-    tool_choice: { type: "tool", name: tool.name },
   });
 
   const toolUse = response.content.find(
