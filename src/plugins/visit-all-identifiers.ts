@@ -3,9 +3,15 @@ import * as babelTraverse from "@babel/traverse";
 import { type Identifier, type Node, toIdentifier } from "@babel/types";
 
 const traverse = (
-  typeof (babelTraverse as unknown as { default?: unknown }).default === "function"
-    ? (babelTraverse as unknown as { default: typeof babelTraverse.default }).default
-    : (babelTraverse as unknown as { default: { default: typeof babelTraverse.default } }).default.default
+  typeof (babelTraverse as unknown as { default?: unknown }).default ===
+  "function"
+    ? (babelTraverse as unknown as { default: typeof babelTraverse.default })
+        .default
+    : (
+        babelTraverse as unknown as {
+          default: { default: typeof babelTraverse.default };
+        }
+      ).default.default
 ) as typeof babelTraverse.default;
 
 type Visitor = (name: string, scope: string) => Promise<string>;
