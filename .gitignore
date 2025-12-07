@@ -1,5 +1,6 @@
-dist
-test-output
+/dist/
+/test-output/
+/output/
 
 node_modules/
 
