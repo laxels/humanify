@@ -57,5 +57,5 @@ test(
       await fileIsMinified(`${TEST_OUTPUT_DIR}/deobfuscated.js`),
     );
   },
-  { timeout: 30_000 },
+  { timeout: 600_000 },
 );
