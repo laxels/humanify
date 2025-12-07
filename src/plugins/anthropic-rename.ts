@@ -7,7 +7,7 @@ export function anthropicRename({
   model,
   contextWindowSize,
 }: {
-  model: string;
+  model?: string;
   contextWindowSize: number;
 }) {
   return async (code: string): Promise<string> => {
