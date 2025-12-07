@@ -1,9 +1,9 @@
 import test from "node:test";
 import { readFile, rm } from "node:fs/promises";
-import { testPrompt } from "./test-prompt.js";
-import { gbnf } from "../plugins/local-llm-rename/gbnf.js";
 import assert from "node:assert";
 import { humanify } from "../test-utils.js";
+import { anthropicToolUse } from "../plugins/anthropic-tool-use.js";
+import { env } from "../env.js";
 
 const TEST_OUTPUT_DIR = "test-output";
 
@@ -12,14 +12,37 @@ test.afterEach(async () => {
 });
 
 test("Unminifies an example file successfully", async () => {
+  const apiKey = env("ANTHROPIC_API_KEY");
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY environment variable is required");
+  }
+
   const fileIsMinified = async (filename: string) => {
-    const prompt = await testPrompt();
-    return await prompt(
-      `Your job is to read the following code and rate it's readabillity and variable names. Answer "EXCELLENT", "GOOD" or "UNREADABLE".`,
-      await readFile(filename, "utf-8"),
-      gbnf`${/("EXCELLENT" | "GOOD" | "UNREADABLE") [^.]+/}.`
-    );
+    const code = await readFile(filename, "utf-8");
+    const result = await anthropicToolUse<{ rating: string }>({
+      apiKey,
+      model: "claude-opus-4-5",
+      system: `Your job is to read code and rate its readability and variable names. Answer "EXCELLENT", "GOOD" or "UNREADABLE".`,
+      content: code,
+      tool: {
+        name: "rate_code",
+        description: "Rate the readability of the code",
+        input_schema: {
+          type: "object" as const,
+          properties: {
+            rating: {
+              type: "string",
+              enum: ["EXCELLENT", "GOOD", "UNREADABLE"],
+              description: "The readability rating of the code"
+            }
+          },
+          required: ["rating"]
+        }
+      }
+    });
+    return result.rating;
   };
+
   const expectStartsWith = (expected: string[], actual: string) => {
     assert(
       expected.some((e) => actual.startsWith(e)),
