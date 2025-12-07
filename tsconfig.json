@@ -1,37 +1,38 @@
 {
   "compilerOptions": {
-    /* 1. Basic Configuration - Core settings for JS/TS execution environment */
-    "target": "ESNext", // JavaScript version to compile to
-    "lib": ["ESNext"], // Standard libraries to include
-    "allowJs": false, // Don't allow JavaScript files to be compiled
-    "skipLibCheck": true, // Skip type checking of declaration files
-    "esModuleInterop": true, // Enable interoperability between CommonJS and ES Modules
-    "module": "esnext", // Module system to use (ESNext for modern JS)
-    "moduleResolution": "bundler", // How module dependencies are resolved
+    // Environment setup & latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": false,
     "resolveJsonModule": true, // Allow importing JSON files as modules
 
-    /* 2. Type Checking - Strict type safety rules for catching potential bugs */
-    "strict": true, // Enable all strict type checking options
-    "noImplicitAny": true, // Error on expressions with implied 'any' type
-    "noImplicitOverride": true, // Ensure 'override' keyword for overridden methods
-    "noImplicitReturns": true, // Error when not all code paths return a value
-    "noUncheckedIndexedAccess": true, // Add 'undefined' to indexed access results (arr[0] is T|undefined)
-    "exactOptionalPropertyTypes": false, // Distinguish between undefined and missing optional properties. Disabled because it causes a lot of problems for not much gain.
-    "useUnknownInCatchVariables": true, // Use 'unknown' instead of 'any' for catch clause variables
-    "noPropertyAccessFromIndexSignature": false, // Require dot notation for known properties, bracket for dynamic
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
 
-    /* 3. Code Quality - Additional rules to enforce clean and safe code */
-    "noFallthroughCasesInSwitch": true, // Error on fall-through cases in switch statements
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitAny": true, // Error on expressions with implied 'any' type
+    "noImplicitReturns": true, // Error when not all code paths return a value
+    "useUnknownInCatchVariables": true, // Use 'unknown' instead of 'any' for catch clause variables
     "forceConsistentCasingInFileNames": true, // Ensure consistent casing in file references
     "allowUnusedLabels": false, // Error on unused labels
     "allowUnreachableCode": false, // Error on unreachable code
 
-    /* 4. Build Configuration - How TypeScript processes and outputs code */
-    "noEmit": true, // Don't output compiled files (Next.js handles this)
-    "isolatedModules": true, // Ensure each file can be transpiled independently
-    "incremental": true, // Enable incremental compilation
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
 
-    /* 5. Project Structure - File organization, paths, and plugins */
     "paths": {
       "@/*": ["./src/*"], // Allow imports from '@/component' instead of 'src/component'
       "@scripts/*": ["./scripts/*"] // Allow imports from '@scripts' instead of 'scripts/'
