@@ -5,7 +5,7 @@ import { anthropicToolUse } from "./anthropic-tool-use.js";
 
 export function anthropicRename({
   model,
-  contextWindowSize
+  contextWindowSize,
 }: {
   model: string;
   contextWindowSize: number;
@@ -29,12 +29,12 @@ export function anthropicRename({
               properties: {
                 newName: {
                   type: "string",
-                  description: `The new name for the variable/function called \`${name}\``
-                }
+                  description: `The new name for the variable/function called \`${name}\``,
+                },
               },
-              required: ["newName"]
-            }
-          }
+              required: ["newName"],
+            },
+          },
         });
 
         verbose.log(`Renamed to ${result.newName}`);
@@ -42,7 +42,7 @@ export function anthropicRename({
         return result.newName;
       },
       contextWindowSize,
-      showPercentage
+      showPercentage,
     );
   };
 }

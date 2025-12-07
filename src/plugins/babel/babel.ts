@@ -13,11 +13,11 @@ const convertVoidToUndefined: PluginItem = {
       ) {
         path.replaceWith({
           type: "Identifier",
-          name: "undefined"
+          name: "undefined",
         });
       }
-    }
-  }
+    },
+  },
 };
 
 const flipComparisonsTheRightWayAround: PluginItem = {
@@ -34,7 +34,7 @@ const flipComparisonsTheRightWayAround: PluginItem = {
         "<": ">",
         "<=": ">=",
         ">": "<",
-        ">=": "<="
+        ">=": "<=",
       };
       if (
         t.isLiteral(node.left) &&
@@ -45,11 +45,11 @@ const flipComparisonsTheRightWayAround: PluginItem = {
           ...node,
           left: node.right,
           right: node.left,
-          operator: mappings[node.operator]
+          operator: mappings[node.operator],
         });
       }
-    }
-  }
+    },
+  },
 };
 
 const makeNumbersLonger: PluginItem = {
@@ -62,11 +62,11 @@ const makeNumbersLonger: PluginItem = {
       ) {
         path.replaceWith({
           type: "NumericLiteral",
-          value: Number(path.node.extra.raw)
+          value: Number(path.node.extra.raw),
         });
       }
-    }
-  }
+    },
+  },
 };
 
 export default async (code: string): Promise<string> =>
@@ -74,5 +74,5 @@ export default async (code: string): Promise<string> =>
     convertVoidToUndefined,
     flipComparisonsTheRightWayAround,
     makeNumbersLonger,
-    bautifier
+    bautifier,
   ]);

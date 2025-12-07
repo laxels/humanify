@@ -8,7 +8,7 @@ type File = {
 
 export async function webcrack(
   code: string,
-  outputDir: string
+  outputDir: string,
 ): Promise<File[]> {
   const cracked = await wc(code);
   await cracked.save(outputDir);

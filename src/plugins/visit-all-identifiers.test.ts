@@ -6,7 +6,7 @@ test("no-op returns the same code", async () => {
   const code = `const a = 1;`;
   assert.equal(
     code,
-    await visitAllIdentifiers(code, async (name) => name, 200)
+    await visitAllIdentifiers(code, async (name) => name, 200),
   );
 });
 
@@ -14,7 +14,7 @@ test("no-op returns the same empty code", async () => {
   const code = "";
   assert.equal(
     code,
-    await visitAllIdentifiers(code, async (name) => name, 200)
+    await visitAllIdentifiers(code, async (name) => name, 200),
   );
 });
 
@@ -22,7 +22,7 @@ test("renames a simple variable", async () => {
   const code = `const a = 1;`;
   assert.equal(
     `const b = 1;`,
-    await visitAllIdentifiers(code, async () => "b", 200)
+    await visitAllIdentifiers(code, async () => "b", 200),
   );
 });
 
@@ -59,7 +59,7 @@ const c = 1;
   const result = await visitAllIdentifiers(
     code,
     async () => ["c", "d"][i++],
-    200
+    200,
   );
   assert.equal(expected, result);
 });
@@ -81,7 +81,7 @@ const c = 1;
   const result = await visitAllIdentifiers(
     code,
     async () => ["c", "d"][i++],
-    200
+    200,
   );
   assert.equal(expected, result);
 });
@@ -98,7 +98,7 @@ class _Foo {
 }`.trim();
   assert.equal(
     await visitAllIdentifiers(code, async (name) => "_" + name, 200),
-    expected
+    expected,
   );
 });
 
@@ -124,23 +124,23 @@ function foo() {
       varnameScopeTuples.push([name, scope]);
       return name + "_changed";
     },
-    200
+    200,
   );
   assert.deepEqual(varnameScopeTuples, [
     [
       "a",
-      "const a = 1;\nfunction foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}\n;"
+      "const a = 1;\nfunction foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}\n;",
     ],
     [
       "foo",
-      "function foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}"
+      "function foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}",
     ],
     [
       "b",
-      "function foo_changed() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}"
+      "function foo_changed() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}",
     ],
     ["Bar", "class Bar {\n  baz = 3;\n  hello() {\n    const y = 123;\n  }\n}"],
-    ["y", "hello() {\n  const y = 123;\n}"]
+    ["y", "hello() {\n  const y = 123;\n}"],
   ]);
 });
 
@@ -161,7 +161,7 @@ function foo() {
       names.push(name);
       return name;
     },
-    200
+    200,
   );
   assert.deepEqual(names, ["foo", "bar", "baz", "qux"]);
 });
@@ -188,7 +188,7 @@ function a(e, t) {
       names.push(name);
       return name + "_changed";
     },
-    200
+    200,
   );
   assert.deepEqual(names, ["a", "e", "t", "n", "r", "i"]);
 });
@@ -213,7 +213,7 @@ function foo() {
       }
       return name;
     },
-    200
+    200,
   );
   assert.equal(scope, code);
 });
@@ -242,8 +242,8 @@ e.b;
         if (name === "a") return "e";
         return "_" + name;
       },
-      200
-    )
+      200,
+    ),
   );
 });
 
@@ -252,7 +252,7 @@ test("should handle invalid identifiers", async () => {
   const result = await visitAllIdentifiers(
     code,
     async () => "this.kLength",
-    200
+    200,
   );
   assert.equal(result, "const thisKLength = 1;");
 });
@@ -280,7 +280,7 @@ const b = 1;
     `
 const foo = 1;
 const _foo = 1;
-`.trim()
+`.trim(),
   );
 });
 
@@ -295,7 +295,7 @@ const bar = 2;
     `
 const _bar = 1;
 const bar = 2;
-`.trim()
+`.trim(),
   );
 });
 
@@ -312,6 +312,6 @@ function foo() {
 function foobar() {
   arguments = '??';
 }
-    `.trim()
+    `.trim(),
   );
 });

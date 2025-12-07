@@ -26,12 +26,12 @@ test("Unminifies an example file successfully", async () => {
             rating: {
               type: "string",
               enum: ["EXCELLENT", "GOOD", "UNREADABLE"],
-              description: "The readability rating of the code"
-            }
+              description: "The readability rating of the code",
+            },
           },
-          required: ["rating"]
-        }
-      }
+          required: ["rating"],
+        },
+      },
     });
     return result.rating;
   };
@@ -39,24 +39,24 @@ test("Unminifies an example file successfully", async () => {
   const expectStartsWith = (expected: string[], actual: string) => {
     assert(
       expected.some((e) => actual.startsWith(e)),
-      `Expected "${expected}" but got ${actual}`
+      `Expected "${expected}" but got ${actual}`,
     );
   };
 
   await expectStartsWith(
     ["UNREADABLE"],
-    await fileIsMinified(`fixtures/example.min.js`)
+    await fileIsMinified(`fixtures/example.min.js`),
   );
 
   await humanify(
     "fixtures/example.min.js",
     "--verbose",
     "--outputDir",
-    TEST_OUTPUT_DIR
+    TEST_OUTPUT_DIR,
   );
 
   await expectStartsWith(
     ["EXCELLENT", "GOOD"],
-    await fileIsMinified(`${TEST_OUTPUT_DIR}/deobfuscated.js`)
+    await fileIsMinified(`${TEST_OUTPUT_DIR}/deobfuscated.js`),
   );
 });

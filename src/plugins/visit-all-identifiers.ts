@@ -14,7 +14,7 @@ export async function visitAllIdentifiers(
   code: string,
   visitor: Visitor,
   contextWindowSize: number,
-  onProgress?: (percentageDone: number) => void
+  onProgress?: (percentageDone: number) => void,
 ) {
   const ast = await parseAsync(code, { sourceType: "unambiguous" });
   const renames = new Set<string>();
@@ -37,7 +37,7 @@ export async function visitAllIdentifiers(
 
     const surroundingCode = await scopeToString(
       smallestScope,
-      contextWindowSize
+      contextWindowSize,
     );
     const renamed = await visitor(smallestScopeNode.name, surroundingCode);
     if (renamed !== smallestScopeNode.name) {
@@ -73,7 +73,7 @@ function findScopes(ast: Node): NodePath<Identifier>[] {
       const pathSize = bindingBlock.end! - bindingBlock.start!;
 
       scopes.push([path, pathSize]);
-    }
+    },
   });
 
   scopes.sort((a, b) => b[1] - a[1]);
@@ -88,14 +88,14 @@ function hasVisited(path: NodePath<Identifier>, visited: Set<string>) {
 function markVisited(
   path: NodePath<Identifier>,
   newName: string,
-  visited: Set<string>
+  visited: Set<string>,
 ) {
   visited.add(newName);
 }
 
 async function scopeToString(
   path: NodePath<Identifier>,
-  contextWindowSize: number
+  contextWindowSize: number,
 ) {
   const surroundingPath = closestSurroundingContextPath(path);
   const code = `${surroundingPath}`; // Implements a hidden `.toString()`
@@ -114,7 +114,7 @@ async function scopeToString(
 
     return code.slice(
       start - contextWindowSize / 2,
-      end + contextWindowSize / 2
+      end + contextWindowSize / 2,
     );
   } else {
     return code.slice(0, contextWindowSize);
@@ -122,10 +122,10 @@ async function scopeToString(
 }
 
 function closestSurroundingContextPath(
-  path: NodePath<Identifier>
+  path: NodePath<Identifier>,
 ): NodePath<Node> {
   const programOrBindingNode = path.findParent(
-    (p) => p.isProgram() || path.node.name in p.getOuterBindingIdentifiers()
+    (p) => p.isProgram() || path.node.name in p.getOuterBindingIdentifiers(),
   )?.scope.path;
   return programOrBindingNode ?? path.scope.path;
 }

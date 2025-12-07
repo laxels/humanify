@@ -22,7 +22,7 @@ export async function anthropicToolUse<T>({
   system,
   content,
   tool,
-  maxTokens = 100
+  maxTokens = 100,
 }: AnthropicToolUseOptions): Promise<T> {
   const response = await client.messages.create({
     model,
@@ -30,16 +30,16 @@ export async function anthropicToolUse<T>({
     system,
     messages: [{ role: "user", content }],
     tools: [tool],
-    tool_choice: { type: "tool", name: tool.name }
+    tool_choice: { type: "tool", name: tool.name },
   });
 
   const toolUse = response.content.find(
-    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
+    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
   );
 
   if (!toolUse) {
     throw new Error(`Failed to get tool use response from Anthropic`, {
-      cause: response
+      cause: response,
     });
   }
 
