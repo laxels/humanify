@@ -40,15 +40,15 @@
     "@babel/core": "^7.25.2",
     "@babel/types": "^7.25.2",
     "@dotenvx/dotenvx": "^1.31.2",
-    "@types/babel__core": "^7.20.5",
     "babel-plugin-transform-beautifier": "^0.1.0",
     "commander": "^13.0.0",
-    "typescript": "^5.5.4",
     "webcrack": "^2.13.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
+    "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
-    "pkgroll": "^2.4.2"
+    "pkgroll": "^2.4.2",
+    "typescript": "^5.5.4"
   }
 }
