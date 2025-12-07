@@ -6,7 +6,7 @@ import { verbose } from "./verbose.js";
 export async function unminify(
   filename: string,
   outputDir: string,
-  plugins: ((code: string) => Promise<string>)[] = []
+  plugins: ((code: string) => Promise<string>)[] = [],
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
@@ -14,7 +14,9 @@ export async function unminify(
 
   for (let i = 0; i < extractedFiles.length; i++) {
     const file = extractedFiles[i];
-    console.log(`Processing file ${file.path} (${i + 1}/${extractedFiles.length})`);
+    console.log(
+      `Processing file ${file.path} (${i + 1}/${extractedFiles.length})`,
+    );
 
     const code = await fs.readFile(file.path, "utf-8");
 
@@ -25,7 +27,7 @@ export async function unminify(
 
     const formattedCode = await plugins.reduce(
       (p, next) => p.then(next),
-      Promise.resolve(code)
+      Promise.resolve(code),
     );
 
     verbose.log("Input: ", code);

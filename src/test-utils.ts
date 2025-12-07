@@ -14,11 +14,11 @@ export async function humanify(...argv: string[]) {
       } else {
         reject(
           new Error(
-            `Process exited with code ${process.exitCode}, stderr: ${stderr.join("")}, stdout: ${stdout.join("")}`
-          )
+            `Process exited with code ${process.exitCode}, stderr: ${stderr.join("")}, stdout: ${stdout.join("")}`,
+          ),
         );
       }
-    })
+    }),
   );
   verbose.log("stdout", stdout.join(""));
   verbose.log("stderr", stderr.join(""));

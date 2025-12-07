@@ -4,7 +4,7 @@ import { parseNumber } from "./number-utils.js";
 import { anthropicRename } from "./plugins/anthropic-rename.js";
 import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use.js";
 import babel from "./plugins/babel/babel.js";
-import prettier from "./plugins/prettier.js";
+import biome from "./plugins/biome.js";
 import { unminify } from "./unminify.js";
 import { verbose } from "./verbose.js";
 
@@ -32,7 +32,7 @@ cli()
     await unminify(filename, opts.outputDir, [
       babel,
       anthropicRename({ model: opts.model, contextWindowSize }),
-      prettier,
+      biome,
     ]);
   })
   .parse(process.argv);

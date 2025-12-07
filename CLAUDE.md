@@ -28,10 +28,8 @@ npm run test:e2e     # E2E tests (*.e2etest.ts) - requires build first
 # Run a single test file
 tsx --test src/path/to/file.test.ts
 
-# Linting
+# Linting and formatting (Biome)
 npm run lint
-npm run lint:prettier
-npm run lint:eslint
 ```
 
 ## Architecture
@@ -43,7 +41,7 @@ The core pipeline in `unminify.ts` processes files through a sequence of plugins
 1. **Webcrack** (`plugins/webcrack.ts`) - Unbundles Webpack bundles, extracts individual files
 2. **Babel transformations** (`plugins/babel/babel.ts`) - AST-level cleanup (void→undefined, flip comparisons, expand numbers)
 3. **Anthropic rename** (`plugins/anthropic-rename.ts`) - Renames minified identifiers using Claude
-4. **Prettier** (`plugins/prettier.ts`) - Final code formatting
+4. **Biome** (`plugins/biome.ts`) - Final code formatting
 
 ### CLI Structure
 

@@ -10,7 +10,7 @@ export const verbose = {
       console.log(`[${timestamp}] `, ...args);
     }
   },
-  enabled: env(`CI`) === "true"
+  enabled: env(`CI`) === "true",
 };
 
 type ConsoleLogArgs = Parameters<typeof console.log>;
