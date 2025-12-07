@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env bun
 import { cli } from "./cli.js";
 import { parseNumber } from "./number-utils.js";
 import { anthropicRename } from "./plugins/anthropic-rename.js";
