@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
+import { config } from "@dotenvx/dotenvx";
 
-dotenv.config();
+config();
 
 export function env(name: string, fallback?: string): string | undefined {
   const value = process.env[name];
