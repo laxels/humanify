@@ -2,10 +2,9 @@
   "name": "humanifyjs",
   "version": "2.2.2",
   "description": "",
-  "main": "dist/index.mjs",
   "scripts": {
     "start": "bun run src/index.ts",
-    "build": "pkgroll",
+    "build": "bun build src/index.ts --compile --outfile dist/humanify",
     "validate": "bun run typecheck && bun run test:unit && bun run lint",
     "typecheck": "tsc --noEmit",
     "test:unit": "bun test ./src/**/*.test.ts",
@@ -13,7 +12,7 @@
     "lint": "biome check --write"
   },
   "bin": {
-    "humanify": "dist/index.mjs"
+    "humanify": "dist/humanify"
   },
   "type": "module",
   "keywords": [
@@ -38,6 +37,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@babel/core": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@babel/types": "^7.28.5",
     "@dotenvx/dotenvx": "^1.51.1",
     "babel-plugin-transform-beautifier": "^0.1.1",
@@ -48,7 +48,6 @@
     "@biomejs/biome": "^2.3.8",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
-    "pkgroll": "^2.21.4",
     "typescript": "^5.9.3"
   },
   "private": true

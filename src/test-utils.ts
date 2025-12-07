@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 import { verbose } from "./verbose.js";
 
 export async function humanify(...argv: string[]) {
-  const process = spawn("./dist/index.mjs", argv);
+  const process = spawn("./dist/humanify", argv);
   const stdout: string[] = [];
   const stderr: string[] = [];
   process.stdout.on("data", (data) => stdout.push(data.toString()));

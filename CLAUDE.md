@@ -12,7 +12,7 @@ HumanifyJS is a CLI tool that uses Anthropic's Claude API to deobfuscate and unm
 # Run development CLI
 bun run start -- <command> [options]
 
-# Build (uses pkgroll)
+# Build (creates single binary executable using Bun)
 bun run build
 
 # Typecheck
