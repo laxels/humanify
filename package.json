@@ -42,12 +42,14 @@
     "@dotenvx/dotenvx": "^1.51.1",
     "babel-plugin-transform-beautifier": "^0.1.1",
     "commander": "^14.0.2",
+    "lodash": "^4.17.21",
     "webcrack": "^2.15.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
+    "@types/lodash": "^4.17.21",
     "typescript": "^5.9.3"
   },
   "private": true
