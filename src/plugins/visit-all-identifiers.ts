@@ -98,7 +98,7 @@ function markVisited(
 
 function scopeToString(path: NodePath<Identifier>, contextWindowSize: number) {
   const surroundingPath = closestSurroundingContextPath(path);
-  const code = `${surroundingPath}`; // Implements a hidden `.toString()`
+  const code = surroundingPath.toString();
   if (code.length < contextWindowSize) {
     return code;
   }
