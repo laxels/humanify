@@ -11,7 +11,7 @@ import { parseNumber } from "../number-utils.js";
 export const anthropic = cli()
   .name("anthropic")
   .description("Use Anthropic Claude API to unminify code")
-  .option("-m, --model <model>", "The model to use", "claude-sonnet-4-20250514")
+  .option("-m, --model <model>", "The model to use", "claude-opus-4-5")
   .option("-o, --outputDir <output>", "The output directory", "output")
   .option(
     "--contextSize <contextSize>",
