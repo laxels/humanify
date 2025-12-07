@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "start": "bun run src/index.ts",
-    "build": "bun build src/index.ts --compile --outfile dist/humanify",
+    "build": "bun build --compile --minify --sourcemap --bytecode src/index.ts --outfile dist/humanify",
     "validate": "bun run typecheck && bun run test:unit && bun run lint",
     "typecheck": "tsc --noEmit",
     "test:unit": "bun test ./src/**/*.test.ts",
