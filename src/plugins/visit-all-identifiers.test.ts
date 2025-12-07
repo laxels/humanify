@@ -1,28 +1,20 @@
-import assert from "assert";
-import test from "node:test";
+import { test, expect } from "bun:test";
 import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 
 test("no-op returns the same code", async () => {
   const code = `const a = 1;`;
-  assert.equal(
-    code,
-    await visitAllIdentifiers(code, async (name) => name, 200),
-  );
+  expect(await visitAllIdentifiers(code, async (name) => name, 200)).toBe(code);
 });
 
 test("no-op returns the same empty code", async () => {
   const code = "";
-  assert.equal(
-    code,
-    await visitAllIdentifiers(code, async (name) => name, 200),
-  );
+  expect(await visitAllIdentifiers(code, async (name) => name, 200)).toBe(code);
 });
 
 test("renames a simple variable", async () => {
   const code = `const a = 1;`;
-  assert.equal(
+  expect(await visitAllIdentifiers(code, async () => "b", 200)).toBe(
     `const b = 1;`,
-    await visitAllIdentifiers(code, async () => "b", 200),
   );
 });
 
@@ -39,7 +31,7 @@ const b = 1;
   b = 2;
 });
   `.trim();
-  assert.equal(expected, await visitAllIdentifiers(code, async () => "b", 200));
+  expect(await visitAllIdentifiers(code, async () => "b", 200)).toBe(expected);
 });
 
 test("renames two scopes, starting from largest scope to smallest", async () => {
@@ -61,7 +53,7 @@ const c = 1;
     async () => ["c", "d"][i++],
     200,
   );
-  assert.equal(expected, result);
+  expect(result).toBe(expected);
 });
 
 test("renames shadowed variables", async () => {
@@ -83,7 +75,7 @@ const c = 1;
     async () => ["c", "d"][i++],
     200,
   );
-  assert.equal(expected, result);
+  expect(result).toBe(expected);
 });
 
 test(`does not rename class methods`, async () => {
@@ -96,8 +88,7 @@ class Foo {
 class _Foo {
   bar() {}
 }`.trim();
-  assert.equal(
-    await visitAllIdentifiers(code, async (name) => "_" + name, 200),
+  expect(await visitAllIdentifiers(code, async (name) => "_" + name, 200)).toBe(
     expected,
   );
 });
@@ -126,7 +117,7 @@ function foo() {
     },
     200,
   );
-  assert.deepEqual(varnameScopeTuples, [
+  expect(varnameScopeTuples).toEqual([
     [
       "a",
       "const a = 1;\nfunction foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}\n;",
@@ -163,7 +154,7 @@ function foo() {
     },
     200,
   );
-  assert.deepEqual(names, ["foo", "bar", "baz", "qux"]);
+  expect(names).toEqual(["foo", "bar", "baz", "qux"]);
 });
 
 test("should rename each variable only once", async () => {
@@ -190,7 +181,7 @@ function a(e, t) {
     },
     200,
   );
-  assert.deepEqual(names, ["a", "e", "t", "n", "r", "i"]);
+  expect(names).toEqual(["a", "e", "t", "n", "r", "i"]);
 });
 
 test("should have a scope from where the variable was declared", async () => {
@@ -215,7 +206,7 @@ function foo() {
     },
     200,
   );
-  assert.equal(scope, code);
+  expect(scope).toBe(code);
 });
 
 test("should not rename object properties", async () => {
@@ -233,8 +224,7 @@ const e = {
 };
 e.b;
   `.trim();
-  assert.equal(
-    expected,
+  expect(
     await visitAllIdentifiers(
       code,
       async (name) => {
@@ -244,7 +234,7 @@ e.b;
       },
       200,
     ),
-  );
+  ).toBe(expected);
 });
 
 test("should handle invalid identifiers", async () => {
@@ -254,19 +244,19 @@ test("should handle invalid identifiers", async () => {
     async () => "this.kLength",
     200,
   );
-  assert.equal(result, "const thisKLength = 1;");
+  expect(result).toBe("const thisKLength = 1;");
 });
 
 test("should handle space in identifier name (happens for some reason though it shouldn't)", async () => {
   const code = `const a = 1`;
   const result = await visitAllIdentifiers(code, async () => "foo bar", 200);
-  assert.equal(result, "const fooBar = 1;");
+  expect(result).toBe("const fooBar = 1;");
 });
 
 test("should handle reserved identifiers", async () => {
   const code = `const a = 1`;
   const result = await visitAllIdentifiers(code, async () => "static", 200);
-  assert.equal(result, "const _static = 1;");
+  expect(result).toBe("const _static = 1;");
 });
 
 test("should handle multiple identifiers named the same", async () => {
@@ -275,8 +265,7 @@ const a = 1;
 const b = 1;
 `.trim();
   const result = await visitAllIdentifiers(code, async () => "foo", 200);
-  assert.equal(
-    result,
+  expect(result).toBe(
     `
 const foo = 1;
 const _foo = 1;
@@ -290,8 +279,7 @@ const foo = 1;
 const bar = 2;
 `.trim();
   const result = await visitAllIdentifiers(code, async () => "bar", 200);
-  assert.equal(
-    result,
+  expect(result).toBe(
     `
 const _bar = 1;
 const bar = 2;
@@ -306,8 +294,7 @@ function foo() {
 }
 `.trim();
   const result = await visitAllIdentifiers(code, async () => "foobar", 200);
-  assert.equal(
-    result,
+  expect(result).toBe(
     `
 function foobar() {
   arguments = '??';

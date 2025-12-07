@@ -18,7 +18,7 @@ cli()
   .option(
     "--contextSize <contextSize>",
     "The context size to use for the LLM",
-    `${DEFAULT_CONTEXT_WINDOW_SIZE}`
+    `${DEFAULT_CONTEXT_WINDOW_SIZE}`,
   )
   .option("--verbose", "Show verbose output")
   .argument("input", "The input minified Javascript file")
@@ -32,7 +32,7 @@ cli()
     await unminify(filename, opts.outputDir, [
       babel,
       anthropicRename({ model: opts.model, contextWindowSize }),
-      prettier
+      prettier,
     ]);
   })
   .parse(process.argv);
