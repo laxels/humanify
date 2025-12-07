@@ -14,7 +14,6 @@ test("Unminifies an example file successfully", async () => {
   const fileIsMinified = async (filename: string) => {
     const code = await readFile(filename, "utf-8");
     const result = await anthropicToolUse<{ rating: string }>({
-      model: "claude-opus-4-5",
       system: `Your job is to read code and rate its readability and variable names. Answer "EXCELLENT", "GOOD" or "UNREADABLE".`,
       content: code,
       tool: {

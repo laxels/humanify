@@ -6,13 +6,14 @@ import babel from "./plugins/babel/babel.js";
 import { verbose } from "./verbose.js";
 import { anthropicRename } from "./plugins/anthropic-rename.js";
 import { parseNumber } from "./number-utils.js";
+import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use.js";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
 
 cli()
   .name("humanify")
   .description("Unminify JavaScript code using Anthropic's Claude API")
-  .option("-m, --model <model>", "The model to use", "claude-opus-4-5")
+  .option("-m, --model <model>", "The model to use", DEFAULT_MODEL)
   .option("-o, --outputDir <output>", "The output directory", "output")
   .option(
     "--contextSize <contextSize>",

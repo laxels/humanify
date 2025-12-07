@@ -3,10 +3,12 @@ import { env } from "../env.js";
 
 const client = new Anthropic({ apiKey: env("ANTHROPIC_API_KEY") });
 
+export const DEFAULT_MODEL = "claude-opus-4-5";
+
 type ToolInputSchema = Anthropic.Messages.Tool["input_schema"];
 
 export interface AnthropicToolUseOptions {
-  model: string;
+  model?: string;
   system: string;
   content: string;
   tool: {
@@ -18,7 +20,7 @@ export interface AnthropicToolUseOptions {
 }
 
 export async function anthropicToolUse<T>({
-  model,
+  model = DEFAULT_MODEL,
   system,
   content,
   tool,
