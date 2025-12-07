@@ -24,7 +24,13 @@
       "style": {
         "useNodejsImportProtocol": "off",
         "useTemplate": "off",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useConsistentTypeDefinitions": {
+          "level": "error",
+          "options": {
+            "style": "type"
+          }
+        }
       }
     }
   },

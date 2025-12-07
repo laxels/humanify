@@ -10,12 +10,12 @@ import { verbose } from "./verbose.js";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
 
-interface CliOptions {
+type CliOptions = {
   model: string;
   outputDir: string;
   contextSize: string;
   verbose?: boolean;
-}
+};
 
 const program = cli()
   .name("humanify")

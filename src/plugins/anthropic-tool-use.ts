@@ -7,7 +7,7 @@ export const DEFAULT_MODEL = "claude-opus-4-5";
 
 type ToolInputSchema = Anthropic.Messages.Tool["input_schema"];
 
-export interface AnthropicToolUseOptions {
+export type AnthropicToolUseOptions = {
   model?: string;
   system: string;
   content: string;
@@ -17,7 +17,7 @@ export interface AnthropicToolUseOptions {
     input_schema: ToolInputSchema;
   };
   maxTokens?: number;
-}
+};
 
 export async function anthropicToolUse<T>({
   model = DEFAULT_MODEL,
