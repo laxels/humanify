@@ -56,7 +56,6 @@ test("Unminifies an example file successfully", async () => {
   );
 
   await humanify(
-    "anthropic",
     "fixtures/example.min.js",
     "--verbose",
     "--outputDir",

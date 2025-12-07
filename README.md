@@ -78,7 +78,7 @@ https://console.anthropic.com/.
 There are several ways to provide the API key to the tool:
 
 ```shell
-humanify anthropic --apiKey="your-token" obfuscated-file.js
+humanify --apiKey="your-token" obfuscated-file.js
 ```
 
 Alternatively you can also use an environment variable `ANTHROPIC_API_KEY`. Use
