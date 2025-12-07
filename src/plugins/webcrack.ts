@@ -1,6 +1,6 @@
-import { webcrack as wc } from "webcrack";
 import fs from "fs/promises";
 import path from "path";
+import { webcrack as wc } from "webcrack";
 
 type File = {
   path: string;

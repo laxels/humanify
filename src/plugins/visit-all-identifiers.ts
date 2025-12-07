@@ -1,12 +1,12 @@
-import { parseAsync, transformFromAstAsync, NodePath } from "@babel/core";
+import { type NodePath, parseAsync, transformFromAstAsync } from "@babel/core";
 import * as babelTraverse from "@babel/traverse";
-import { Identifier, toIdentifier, Node } from "@babel/types";
+import { type Identifier, type Node, toIdentifier } from "@babel/types";
 
 const traverse: typeof babelTraverse.default.default = (
   typeof babelTraverse.default === "function"
     ? babelTraverse.default
     : babelTraverse.default.default
-) as any; // eslint-disable-line @typescript-eslint/no-explicit-any -- This hack is because pkgroll fucks up the import somehow
+) as any;
 
 type Visitor = (name: string, scope: string) => Promise<string>;
 

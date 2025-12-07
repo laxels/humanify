@@ -1,12 +1,12 @@
 #!/usr/bin/env -S npx tsx
 import { cli } from "./cli.js";
+import { parseNumber } from "./number-utils.js";
+import { anthropicRename } from "./plugins/anthropic-rename.js";
+import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use.js";
+import babel from "./plugins/babel/babel.js";
 import prettier from "./plugins/prettier.js";
 import { unminify } from "./unminify.js";
-import babel from "./plugins/babel/babel.js";
 import { verbose } from "./verbose.js";
-import { anthropicRename } from "./plugins/anthropic-rename.js";
-import { parseNumber } from "./number-utils.js";
-import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use.js";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
 

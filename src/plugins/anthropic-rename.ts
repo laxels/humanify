@@ -1,7 +1,7 @@
-import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 import { showProgress } from "../progress.js";
 import { verbose } from "../verbose.js";
 import { anthropicToolUse } from "./anthropic-tool-use.js";
+import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 
 export function anthropicRename({
   model,

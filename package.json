@@ -6,12 +6,11 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "build": "pkgroll",
-    "validate": "bun run typecheck && bun run test && bun run lint && bun run format",
+    "validate": "bun run typecheck && bun run test:unit && bun run lint && bun run format",
     "typecheck": "tsc --noEmit",
-    "test": "bun run test:unit && bun run test:e2e",
     "test:unit": "bun test ./src/**/*.test.ts",
     "test:e2e": "bun run build && bun test ./src/**/*.test.e2e.ts",
-    "lint": "eslint --fix src/**/*",
+    "lint": "biome check --write",
     "format": "prettier --write --list-different src/**/*"
   },
   "bin": {
@@ -49,13 +48,9 @@
     "webcrack": "^2.13.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.8.0",
+    "@biomejs/biome": "^2.3.8",
     "@types/bun": "latest",
-    "eslint": "^9.8.0",
-    "eslint-plugin-unused-imports": "^4.1.2",
-    "globals": "^16.0.0",
     "pkgroll": "^2.4.2",
-    "prettier": "^3.3.3",
-    "typescript-eslint": "^8.0.0"
+    "prettier": "^3.3.3"
   }
 }

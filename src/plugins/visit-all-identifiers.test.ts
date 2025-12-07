@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 
 test("no-op returns the same code", async () => {

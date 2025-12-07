@@ -1,7 +1,7 @@
-import { PluginItem } from "@babel/core";
+import type { PluginItem } from "@babel/core";
 import * as t from "@babel/types";
-import { transformWithPlugins } from "../../babel-utils.js";
 import beautifier from "babel-plugin-transform-beautifier";
+import { transformWithPlugins } from "../../babel-utils.js";
 
 const convertVoidToUndefined: PluginItem = {
   visitor: {
@@ -25,7 +25,6 @@ const flipComparisonsTheRightWayAround: PluginItem = {
     // If a variable is compared to a literal, flip the comparison around so that the literal is on the right-hand side
     BinaryExpression(path) {
       const node = path.node;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mappings: any = {
         "==": "==",
         "!=": "!=",

@@ -1,7 +1,7 @@
-import { test, expect, afterEach } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { readFile, rm } from "node:fs/promises";
-import { humanify } from "../test-utils.js";
 import { anthropicToolUse } from "../plugins/anthropic-tool-use.js";
+import { humanify } from "../test-utils.js";
 
 const TEST_OUTPUT_DIR = "test-output";
 

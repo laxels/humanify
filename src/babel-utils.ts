@@ -1,4 +1,4 @@
-import { transform, PluginItem } from "@babel/core";
+import { type PluginItem, transform } from "@babel/core";
 
 export const transformWithPlugins = async (
   code: string,
