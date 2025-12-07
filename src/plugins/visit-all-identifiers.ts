@@ -30,7 +30,7 @@ export async function visitAllIdentifiers(
     throw new Error("Failed to parse code");
   }
 
-  const scopes = await findScopes(ast);
+  const scopes = findScopes(ast);
   const numRenamesExpected = scopes.length;
 
   for (const smallestScope of scopes) {
@@ -41,10 +41,7 @@ export async function visitAllIdentifiers(
       throw new Error("No identifiers found");
     }
 
-    const surroundingCode = await scopeToString(
-      smallestScope,
-      contextWindowSize,
-    );
+    const surroundingCode = scopeToString(smallestScope, contextWindowSize);
     const renamed = await visitor(smallestScopeNode.name, surroundingCode);
     if (renamed !== smallestScopeNode.name) {
       let safeRenamed = toIdentifier(renamed);
@@ -99,10 +96,7 @@ function markVisited(
   visited.add(newName);
 }
 
-async function scopeToString(
-  path: NodePath<Identifier>,
-  contextWindowSize: number,
-) {
+function scopeToString(path: NodePath<Identifier>, contextWindowSize: number) {
   const surroundingPath = closestSurroundingContextPath(path);
   const code = `${surroundingPath}`; // Implements a hidden `.toString()`
   if (code.length < contextWindowSize) {
