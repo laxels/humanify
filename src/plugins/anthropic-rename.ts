@@ -1,5 +1,5 @@
 import { visitAllIdentifiers } from "./visit-all-identifiers.js";
-import { showPercentage } from "../progress.js";
+import { showProgress } from "../progress.js";
 import { verbose } from "../verbose.js";
 import { anthropicToolUse } from "./anthropic-tool-use.js";
 
@@ -42,7 +42,7 @@ export function anthropicRename({
         return result.newName;
       },
       contextWindowSize,
-      showPercentage,
+      showProgress,
     );
   };
 }

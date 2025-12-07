@@ -14,7 +14,7 @@ export async function visitAllIdentifiers(
   code: string,
   visitor: Visitor,
   contextWindowSize: number,
-  onProgress?: (percentageDone: number) => void,
+  onProgress?: (done: number, total: number) => void,
 ) {
   const ast = await parseAsync(code, { sourceType: "unambiguous" });
   const renames = new Set<string>();
@@ -54,9 +54,9 @@ export async function visitAllIdentifiers(
     }
     markVisited(smallestScope, smallestScopeNode.name, visited);
 
-    onProgress?.(visited.size / numRenamesExpected);
+    onProgress?.(visited.size, numRenamesExpected);
   }
-  onProgress?.(1);
+  onProgress?.(numRenamesExpected, numRenamesExpected);
 
   const stringified = await transformFromAstAsync(ast);
   if (stringified?.code == null) {
