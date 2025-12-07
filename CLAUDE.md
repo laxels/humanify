@@ -10,10 +10,13 @@ HumanifyJS is a CLI tool that uses Anthropic's Claude API to deobfuscate and unm
 
 ```bash
 # Run development CLI
-bun run start -- <command> [options]
+bun run start -- <input-file> [options]
 
 # Build (creates single binary executable using Bun)
 bun run build
+
+# Validate (typecheck + unit tests + lint)
+bun run validate
 
 # Typecheck
 bun run typecheck
@@ -29,34 +32,40 @@ bun test ./src/path/to/file.test.ts
 bun run lint
 ```
 
+Requires `ANTHROPIC_API_KEY` environment variable to be set.
+
 ## Architecture
 
 ### Processing Pipeline
 
-The core pipeline in `unminify.ts` processes files through a sequence of plugins:
+The `unminify.ts` orchestrates two phases:
 
-1. **Webcrack** (`plugins/webcrack.ts`) - Unbundles Webpack bundles, extracts individual files to output directory
-2. **Babel transformations** (`plugins/babel/babel.ts`) - AST-level cleanup (void→undefined, flip comparisons, expand numbers)
-3. **Anthropic rename** (`plugins/anthropic-rename.ts`) - Renames minified identifiers using Claude
-4. **Biome** (`plugins/biome.ts`) - Final code formatting
+1. **Webcrack** (`plugins/webcrack.ts`) - Unbundles Webpack bundles first, extracting individual files to output directory
+2. **Plugin chain** - Each extracted file runs through plugins sequentially:
+   - `babel.ts` - AST-level cleanup (void→undefined, flip comparisons, expand scientific notation)
+   - `anthropic-rename.ts` - Renames minified identifiers using Claude with extended thinking
+   - `biome.ts` - Final code formatting
 
 ### Plugin Pattern
 
-Plugins are functions with signature `(code: string) => Promise<string>`. They're composed sequentially via promise chaining in `unminify.ts`.
+Plugins are functions with signature `(code: string) => Promise<string>`. They're composed via promise chaining: `plugins.reduce((p, next) => p.then(next), Promise.resolve(code))`.
 
 ### Identifier Renaming
 
 The renaming logic in `plugins/visit-all-identifiers.ts`:
 - Parses code to AST with Babel
 - Finds all binding identifiers (variable/function declarations)
-- Sorts by scope size (largest first) so outer scopes get renamed before inner
-- For each identifier, extracts surrounding code context and calls Claude for a better name
-- Uses Babel's scope.rename() to safely rename all references
+- Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
+- For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
+- Uses Babel's `scope.rename()` to safely rename all references
+- Handles name collisions by prefixing with underscores
 
-### CLI Structure
+### Anthropic Integration
 
-- Entry point: `src/index.ts` (parses CLI options, configures plugins)
-- CLI wrapper: `src/cli.ts` (Commander.js setup)
+`plugins/anthropic-tool-use.ts` wraps the Anthropic SDK:
+- Uses extended thinking (default 50k budget) for better reasoning
+- Uses tool use to get structured `{ newName: string }` responses
+- Default model: `claude-opus-4-5`
 
 ### Test File Conventions
 
