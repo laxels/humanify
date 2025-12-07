@@ -15,6 +15,9 @@ npm start -- <command> [options]
 # Build (uses pkgroll)
 npm run build
 
+# Typecheck
+npm run typecheck
+
 # Run all tests
 npm test
 
@@ -36,6 +39,7 @@ npm run lint:eslint
 ### Processing Pipeline
 
 The core pipeline in `unminify.ts` processes files through a sequence of plugins:
+
 1. **Webcrack** (`plugins/webcrack.ts`) - Unbundles Webpack bundles, extracts individual files
 2. **Babel transformations** (`plugins/babel/babel.ts`) - AST-level cleanup (void→undefined, flip comparisons, expand numbers)
 3. **Anthropic rename** (`plugins/anthropic-rename.ts`) - Renames minified identifiers using Claude
