@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { env } from "../env.js";
+
+const client = new Anthropic({ apiKey: env("ANTHROPIC_API_KEY") });
 
 type ToolInputSchema = Anthropic.Messages.Tool["input_schema"];
 
 export interface AnthropicToolUseOptions {
-  client?: Anthropic;
-  apiKey?: string;
   model: string;
   system: string;
   content: string;
@@ -17,21 +18,13 @@ export interface AnthropicToolUseOptions {
 }
 
 export async function anthropicToolUse<T>({
-  client,
-  apiKey,
   model,
   system,
   content,
   tool,
   maxTokens = 100
 }: AnthropicToolUseOptions): Promise<T> {
-  if (!client && !apiKey) {
-    throw new Error("Either client or apiKey must be provided");
-  }
-
-  const anthropicClient = client ?? new Anthropic({ apiKey });
-
-  const response = await anthropicClient.messages.create({
+  const response = await client.messages.create({
     model,
     max_tokens: maxTokens,
     system,

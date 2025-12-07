@@ -73,16 +73,15 @@ expect the tool to be installed globally, but they should work by replacing
 ### Usage
 
 You'll need an Anthropic API key. You can get one by signing up at
-https://console.anthropic.com/.
-
-There are several ways to provide the API key to the tool:
+https://console.anthropic.com/. Set the `ANTHROPIC_API_KEY` environment variable
+with your key:
 
 ```shell
-humanify --apiKey="your-token" obfuscated-file.js
+export ANTHROPIC_API_KEY="your-api-key"
+humanify obfuscated-file.js
 ```
 
-Alternatively you can also use an environment variable `ANTHROPIC_API_KEY`. Use
-`humanify --help` to see all available options.
+Use `humanify --help` to see all available options.
 
 ## Features
 
