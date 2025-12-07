@@ -1,3 +1,5 @@
+import { env } from "./env.js";
+
 export const verbose = {
   log(...args: ConsoleLogArgs) {
     if (this.enabled) {
@@ -8,7 +10,7 @@ export const verbose = {
       console.log(`[${timestamp}] `, ...args);
     }
   },
-  enabled: process.env["CI"] === "true"
+  enabled: env(`CI`) === "true"
 };
 
 type ConsoleLogArgs = Parameters<typeof console.log>;
