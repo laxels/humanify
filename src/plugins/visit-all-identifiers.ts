@@ -2,11 +2,11 @@ import { type NodePath, parseAsync, transformFromAstAsync } from "@babel/core";
 import * as babelTraverse from "@babel/traverse";
 import { type Identifier, type Node, toIdentifier } from "@babel/types";
 
-const traverse: typeof babelTraverse.default.default = (
-  typeof babelTraverse.default === "function"
-    ? babelTraverse.default
-    : babelTraverse.default.default
-) as any;
+const traverse = (
+  typeof (babelTraverse as unknown as { default?: unknown }).default === "function"
+    ? (babelTraverse as unknown as { default: typeof babelTraverse.default }).default
+    : (babelTraverse as unknown as { default: { default: typeof babelTraverse.default } }).default.default
+) as typeof babelTraverse.default;
 
 type Visitor = (name: string, scope: string) => Promise<string>;
 
@@ -68,7 +68,7 @@ export async function visitAllIdentifiers(
 function findScopes(ast: Node): NodePath<Identifier>[] {
   const scopes: [nodePath: NodePath<Identifier>, scopeSize: number][] = [];
   traverse(ast, {
-    BindingIdentifier(path) {
+    BindingIdentifier(path: NodePath<Identifier>) {
       const bindingBlock = closestSurroundingContextPath(path).scope.block;
       const pathSize = bindingBlock.end! - bindingBlock.start!;
 

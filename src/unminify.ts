@@ -13,7 +13,7 @@ export async function unminify(
   const extractedFiles = await webcrack(bundledCode, outputDir);
 
   for (let i = 0; i < extractedFiles.length; i++) {
-    const file = extractedFiles[i];
+    const file = extractedFiles[i]!;
     console.log(
       `Processing file ${file.path} (${i + 1}/${extractedFiles.length})`,
     );

@@ -10,26 +10,23 @@ HumanifyJS is a CLI tool that uses Anthropic's Claude API to deobfuscate and unm
 
 ```bash
 # Run development CLI
-npm start -- <command> [options]
+bun run start -- <command> [options]
 
 # Build (uses pkgroll)
-npm run build
+bun run build
 
 # Typecheck
-npm run typecheck
-
-# Run all tests
-npm test
+bun run typecheck
 
 # Run specific test types
-npm run test:unit    # Unit tests (*.test.ts)
-npm run test:e2e     # E2E tests (*.e2etest.ts) - requires build first
+bun run test:unit    # Unit tests (*.test.ts)
+bun run test:e2e     # E2E tests (*.e2etest.ts) - requires build first
 
 # Run a single test file
-tsx --test src/path/to/file.test.ts
+bun test ./src/path/to/file.test.ts
 
 # Linting and formatting (Biome)
-npm run lint
+bun run lint
 ```
 
 ## Architecture

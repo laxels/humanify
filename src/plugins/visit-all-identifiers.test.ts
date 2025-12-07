@@ -50,7 +50,7 @@ const c = 1;
   let i = 0;
   const result = await visitAllIdentifiers(
     code,
-    async () => ["c", "d"][i++],
+    async () => ["c", "d"][i++] ?? "",
     200,
   );
   expect(result).toBe(expected);
@@ -72,7 +72,7 @@ const c = 1;
   let i = 0;
   const result = await visitAllIdentifiers(
     code,
-    async () => ["c", "d"][i++],
+    async () => ["c", "d"][i++] ?? "",
     200,
   );
   expect(result).toBe(expected);
