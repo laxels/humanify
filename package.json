@@ -18,6 +18,7 @@
     "test:llm": "find src -name '*.llmtest.ts' | xargs tsx --test --test-concurrency=1",
     "test:openai": "npm run build && find src -name '*.openaitest.ts' | xargs tsx --test",
     "test:gemini": "npm run build && find src -name '*.geminitest.ts' | xargs tsx --test",
+    "test:anthropic": "npm run build && find src -name '*.anthropictest.ts' | xargs tsx --test",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "lint:prettier": "prettier --check src/* src/**/*",
     "lint:eslint": "eslint src/* src/**/*",
@@ -48,6 +49,7 @@
   "author": "Jesse Luoto",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "0.39.0",
     "@babel/core": "^7.25.2",
     "@babel/types": "^7.25.2",
     "@google/generative-ai": "^0.24.0",
