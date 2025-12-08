@@ -103,7 +103,7 @@ function markVisited(
 function scopeToString(path: NodePath<Identifier>, contextWindowSize: number) {
   const surroundingPath = closestSurroundingContextPath(path);
   const code = surroundingPath.toString();
-  if (code.length < contextWindowSize) {
+  if (code.length <= contextWindowSize) {
     return code;
   }
   if (surroundingPath.isProgram()) {
