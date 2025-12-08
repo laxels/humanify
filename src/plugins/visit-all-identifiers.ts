@@ -69,7 +69,10 @@ export async function visitAllIdentifiers(
 }
 
 function findBindingIdentifiers(ast: Node): NodePath<Identifier>[] {
-  const pathsWithScopeSize: [nodePath: NodePath<Identifier>, scopeSize: number][] = [];
+  const pathsWithScopeSize: [
+    nodePath: NodePath<Identifier>,
+    scopeSize: number,
+  ][] = [];
   traverse(ast, {
     BindingIdentifier(path: NodePath<Identifier>) {
       const bindingBlock = closestSurroundingContextPath(path).scope.block;

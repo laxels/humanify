@@ -1,4 +1,4 @@
-import { verbose } from "./verbose.js";
+import { verbose } from "./verbose";
 
 export function showProgress(done: number, total: number) {
   const percentage = total > 0 ? Math.round((done / total) * 100) : 0;

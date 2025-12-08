@@ -1,7 +1,7 @@
 import fs from "fs/promises";
-import { ensureFileExists } from "./file-utils.js";
-import { webcrack } from "./plugins/webcrack.js";
-import { verbose } from "./verbose.js";
+import { ensureFileExists } from "./file-utils";
+import { webcrack } from "./plugins/webcrack";
+import { verbose } from "./verbose";
 
 export async function unminify(
   filename: string,

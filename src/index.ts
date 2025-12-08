@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
-import { cli } from "./cli.js";
-import { parseNumber } from "./number-utils.js";
-import { anthropicRename } from "./plugins/anthropic-rename.js";
-import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use.js";
-import babel from "./plugins/babel/babel.js";
-import biome from "./plugins/biome.js";
-import { unminify } from "./unminify.js";
-import { verbose } from "./verbose.js";
+import { cli } from "./cli";
+import { parseNumber } from "./number-utils";
+import { anthropicRename } from "./plugins/anthropic-rename";
+import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use";
+import babel from "./plugins/babel/babel";
+import biome from "./plugins/biome";
+import { unminify } from "./unminify";
+import { verbose } from "./verbose";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
 

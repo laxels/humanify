@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { verbose } from "./verbose.js";
+import { verbose } from "./verbose";
 
 export async function humanify(...argv: string[]) {
   const process = spawn("./dist/humanify", argv);

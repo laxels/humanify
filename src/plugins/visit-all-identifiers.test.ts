@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { visitAllIdentifiers } from "./visit-all-identifiers.js";
+import { visitAllIdentifiers } from "./visit-all-identifiers";
 
 test("no-op returns the same code", async () => {
   const code = `const a = 1;`;

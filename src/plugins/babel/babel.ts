@@ -1,7 +1,7 @@
 import type { PluginItem } from "@babel/core";
 import * as t from "@babel/types";
 import beautifier from "babel-plugin-transform-beautifier";
-import { transformWithPlugins } from "../../babel-utils.js";
+import { transformWithPlugins } from "../../babel-utils";
 
 const convertVoidToUndefined: PluginItem = {
   visitor: {
