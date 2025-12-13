@@ -1,11 +1,8 @@
 #!/usr/bin/env bun
+import { DEFAULT_MODEL } from "./anthropic/tool-use";
 import { cli } from "./cli";
 import { parseNumber } from "./number-utils";
-import { anthropicRename } from "./plugins/anthropic-rename";
-import { DEFAULT_MODEL } from "./plugins/anthropic-tool-use";
-import babel from "./plugins/babel/babel";
-import biome from "./plugins/biome";
-import { unminify } from "./unminify";
+import { unminify } from "./pipeline/unminify";
 import { verbose } from "./verbose";
 
 const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
@@ -38,11 +35,10 @@ const program = cli()
 
     const contextWindowSize = parseNumber(opts.contextSize);
 
-    await unminify(filename, opts.outputDir, [
-      babel,
-      anthropicRename({ model: opts.model, contextWindowSize }),
-      biome,
-    ]);
+    await unminify(filename, opts.outputDir, {
+      model: opts.model,
+      contextWindowSize,
+    });
   });
 
 program.parse(process.argv);

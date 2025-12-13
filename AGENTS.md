@@ -38,38 +38,37 @@ Requires `ANTHROPIC_API_KEY` environment variable to be set.
 
 ### Processing Pipeline
 
-The `unminify.ts` orchestrates two phases:
+The pipeline is intentionally fixed and lives in `src/pipeline/unminify.ts`:
 
-1. **Webcrack** (`plugins/webcrack.ts`) - Unbundles Webpack bundles first, extracting individual files to output directory
-2. **Plugin chain** - Each extracted file runs through plugins sequentially:
-   - `babel.ts` - AST-level cleanup (void→undefined, flip comparisons, expand scientific notation)
-   - `anthropic-rename.ts` - Renames minified identifiers using Claude with extended thinking
-   - `biome.ts` - Final code formatting
-
-### Plugin Pattern
-
-Plugins are functions with signature `(code: string) => Promise<string>`. They're composed via promise chaining: `plugins.reduce((p, next) => p.then(next), Promise.resolve(code))`.
+1. **Unpack bundles** (`src/unpack/webcrack.ts`)
+   Unbundles Webpack bundles first, extracting individual files to the output directory.
+2. **AST cleanup** (`src/ast/babel/babel.ts`)
+   Semantics-preserving cleanups (void→undefined, flip comparisons, expand scientific notation) plus beautification.
+3. **Identifier renaming** (`src/rename/rename-identifiers.ts`)
+   Calls Claude to propose descriptive names and applies them safely via Babel scope renaming.
+4. **Formatting** (`src/format/biome.ts`)
+   Final code formatting.
 
 ### Identifier Renaming
 
-The renaming logic in `plugins/visit-all-identifiers.ts`:
+The renaming logic in `src/rename/visit-all-identifiers.ts`:
 
-- Parses code to AST with Babel
-- Finds all binding identifiers (variable/function declarations)
-- Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
-- For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
-- Uses Babel's `scope.rename()` to safely rename all references
-- Handles name collisions by prefixing with underscores
+* Parses code to AST with Babel
+* Finds all binding identifiers (variable/function/class declarations)
+* Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
+* For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
+* Uses Babel's `scope.rename()` to safely rename all references
+* Handles name collisions by prefixing with underscores
 
 ### Anthropic Integration
 
-`plugins/anthropic-tool-use.ts` wraps the Anthropic SDK:
+`src/anthropic/tool-use.ts` wraps the Anthropic SDK:
 
-- Uses extended thinking (default 50k budget) for better reasoning
-- Uses tool use to get structured `{ newName: string }` responses
-- Default model: `claude-opus-4-5`
+* Uses extended thinking (default 50k budget) for better reasoning
+* Uses tool use to get structured responses (e.g. `{ newName: string }`)
+* Default model: `claude-opus-4-5`
 
 ### Test File Conventions
 
-- `*.test.ts` - Unit tests
-- `*.test.e2e.ts` - End-to-end tests (require built CLI)
+* `*.test.ts` - Unit tests
+* `*.test.e2e.ts` - End-to-end tests (require built CLI)

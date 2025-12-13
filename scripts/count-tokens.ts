@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import Anthropic from "@anthropic-ai/sdk";
+import { DEFAULT_MODEL } from "@/anthropic/tool-use";
 import { env } from "@/env";
-import { DEFAULT_MODEL } from "@/plugins/anthropic-tool-use";
 
 const client = new Anthropic({ apiKey: env("ANTHROPIC_API_KEY") });
 
@@ -19,7 +19,7 @@ async function countTokens(filePath: string): Promise<number> {
 const filePath = process.argv[2];
 
 if (!filePath) {
-  console.error("Usage: bun scripts/count-tokens.ts <file>");
+  console.error("Usage: bun scripts/count-tokens.ts file>");
   process.exit(1);
 }
 

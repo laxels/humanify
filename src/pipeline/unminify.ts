@@ -1,12 +1,20 @@
 import fs from "fs/promises";
-import { ensureFileExists } from "./file-utils";
-import { webcrack } from "./plugins/webcrack";
-import { verbose } from "./verbose";
+import babel from "../ast/babel/babel";
+import { ensureFileExists } from "../file-utils";
+import biome from "../format/biome";
+import { renameIdentifiers } from "../rename/rename-identifiers";
+import { webcrack } from "../unpack/webcrack";
+import { verbose } from "../verbose";
+
+export type UnminifyOptions = {
+  model?: string;
+  contextWindowSize: number;
+};
 
 export async function unminify(
   filename: string,
   outputDir: string,
-  plugins: ((code: string) => Promise<string>)[] = [],
+  options: UnminifyOptions,
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
@@ -25,10 +33,9 @@ export async function unminify(
       continue;
     }
 
-    const formattedCode = await plugins.reduce(
-      (p, next) => p.then(next),
-      Promise.resolve(code),
-    );
+    const babelCleaned = await babel(code);
+    const renamed = await renameIdentifiers(babelCleaned, options);
+    const formattedCode = await biome(renamed);
 
     verbose.log("Input: ", code);
     verbose.log("Output: ", formattedCode);
