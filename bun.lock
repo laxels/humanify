@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "humanifyjs",
+      "name": "humanify",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.71.2",
         "@babel/core": "^7.28.5",
