@@ -1,13 +1,9 @@
 #!/usr/bin/env bun
-import { DEFAULT_MODEL } from "@/plugins/anthropic-tool-use";
 import Anthropic from "@anthropic-ai/sdk";
-import { config } from "@dotenvx/dotenvx";
+import { env } from "@/env";
+import { DEFAULT_MODEL } from "@/plugins/anthropic-tool-use";
 
-config();
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const client = new Anthropic({ apiKey: env("ANTHROPIC_API_KEY") });
 
 async function countTokens(filePath: string): Promise<number> {
   const content = await Bun.file(filePath).text();
