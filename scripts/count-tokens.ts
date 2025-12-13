@@ -19,7 +19,7 @@ async function countTokens(filePath: string): Promise<number> {
 const filePath = process.argv[2];
 
 if (!filePath) {
-  console.error("Usage: bun scripts/count-tokens.ts file>");
+  console.error("Usage: bun scripts/count-tokens.ts FILE_PATH");
   process.exit(1);
 }
 
