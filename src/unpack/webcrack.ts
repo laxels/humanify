@@ -2,14 +2,10 @@ import fs from "fs/promises";
 import path from "path";
 import { webcrack as wc } from "webcrack";
 
-type File = {
-  path: string;
-};
-
 export async function webcrack(
   code: string,
   outputDir: string,
-): Promise<File[]> {
+): Promise<Array<{ path: string }>> {
   const cracked = await wc(code);
   await cracked.save(outputDir);
 
