@@ -1,6 +1,11 @@
 import * as t from "@babel/types";
 import type { NodePath } from "../babel-traverse";
-import type { ChunkId, RenamingAnalysis, SymbolDossier, SymbolInfo } from "./types";
+import type {
+  ChunkId,
+  RenamingAnalysis,
+  SymbolDossier,
+  SymbolInfo,
+} from "./types";
 
 export function buildDossiersByChunk(
   analysis: RenamingAnalysis,
@@ -42,7 +47,10 @@ export function buildSymbolDossier(
   };
 }
 
-function getDeclarationSnippet(symbol: SymbolInfo, contextWindowSize: number): string {
+function getDeclarationSnippet(
+  symbol: SymbolInfo,
+  contextWindowSize: number,
+): string {
   if (symbol.kind === "param") {
     const fn = symbol.declIdPath.getFunctionParent();
     if (fn) {
@@ -93,7 +101,10 @@ type UsageAgg = {
   comparisons: Map<string, number>;
 };
 
-function summarizeUsages(symbol: SymbolInfo): { usageSummary: string; typeHints: string[] } {
+function summarizeUsages(symbol: SymbolInfo): {
+  usageSummary: string;
+  typeHints: string[];
+} {
   const binding = symbol.binding;
   const refPaths = binding.referencePaths as Array<NodePath<t.Identifier>>;
 
@@ -131,7 +142,9 @@ function summarizeUsages(symbol: SymbolInfo): { usageSummary: string; typeHints:
       .map(([argc, n]) => `${argc} args (${n}x)`)
       .join(", ");
     parts.push(
-      argCounts ? `called: ${agg.called} (${argCounts})` : `called: ${agg.called}`,
+      argCounts
+        ? `called: ${agg.called} (${argCounts})`
+        : `called: ${agg.called}`,
     );
   }
   if (agg.constructed > 0) parts.push(`new: ${agg.constructed}`);
@@ -147,7 +160,8 @@ function summarizeUsages(symbol: SymbolInfo): { usageSummary: string; typeHints:
   if (members.length > 0) parts.push(`members: ${members.join(", ")}`);
 
   const comparisons = topKeys(agg.comparisons, 4);
-  if (comparisons.length > 0) parts.push(`compared to: ${comparisons.join(", ")}`);
+  if (comparisons.length > 0)
+    parts.push(`compared to: ${comparisons.join(", ")}`);
 
   const summary = parts.join(" • ");
 
@@ -227,13 +241,19 @@ function classifyReference(ref: NodePath<t.Identifier>, agg: UsageAgg) {
     if (propName) increment(agg.memberAccesses, propName);
 
     const callParent = parent.parentPath;
-    if (callParent?.isCallExpression() && callParent.node.callee === parent.node) {
+    if (
+      callParent?.isCallExpression() &&
+      callParent.node.callee === parent.node
+    ) {
       if (propName) increment(agg.methodCalls, propName);
     }
   }
 
   // Optional chaining: x?.foo / x?.()
-  if ((parent as any).isOptionalMemberExpression?.() && (parent.node as any).object === ref.node) {
+  if (
+    (parent as any).isOptionalMemberExpression?.() &&
+    (parent.node as any).object === ref.node
+  ) {
     const propName = getStaticPropertyName(parent.node as any);
     if (propName) increment(agg.memberAccesses, propName);
 
@@ -247,8 +267,12 @@ function classifyReference(ref: NodePath<t.Identifier>, agg: UsageAgg) {
   }
 
   // Comparisons
-  if (parent.isBinaryExpression() && isComparisonOperator(parent.node.operator)) {
-    const other = parent.node.left === ref.node ? parent.node.right : parent.node.left;
+  if (
+    parent.isBinaryExpression() &&
+    isComparisonOperator(parent.node.operator)
+  ) {
+    const other =
+      parent.node.left === ref.node ? parent.node.right : parent.node.left;
     const literal = literalToString(other);
     if (literal) increment(agg.comparisons, literal);
   }
@@ -276,7 +300,9 @@ function literalToString(node: t.Node): string | undefined {
   return undefined;
 }
 
-function getStaticPropertyName(node: t.MemberExpression | any): string | undefined {
+function getStaticPropertyName(
+  node: t.MemberExpression | any,
+): string | undefined {
   if (node.computed) {
     if (t.isStringLiteral(node.property)) return node.property.value;
     if (t.isNumericLiteral(node.property)) return String(node.property.value);
@@ -293,11 +319,13 @@ function isInCondition(path: NodePath<t.Identifier>): boolean {
   // if (x) / while(x) / for(;x;)
   if (parent.isIfStatement() && parent.node.test === path.node) return true;
   if (parent.isWhileStatement() && parent.node.test === path.node) return true;
-  if (parent.isDoWhileStatement() && parent.node.test === path.node) return true;
+  if (parent.isDoWhileStatement() && parent.node.test === path.node)
+    return true;
   if (parent.isForStatement() && parent.node.test === path.node) return true;
 
   // ternary condition
-  if (parent.isConditionalExpression() && parent.node.test === path.node) return true;
+  if (parent.isConditionalExpression() && parent.node.test === path.node)
+    return true;
 
   // logical expression in test positions (we only do shallow)
   if (parent.isLogicalExpression()) return true;
@@ -311,17 +339,27 @@ function deriveTypeHints(symbol: SymbolInfo, agg: UsageAgg): string[] {
   const members = new Set(agg.memberAccesses.keys());
   const methods = new Set(agg.methodCalls.keys());
 
-  const hasAny = (set: Set<string>, names: string[]) => names.some((n) => set.has(n));
+  const hasAny = (set: Set<string>, names: string[]) =>
+    names.some((n) => set.has(n));
 
   if (agg.called > 0 && symbol.kind !== "class") hints.add("callable");
-  if (agg.constructed > 0 || symbol.kind === "class") hints.add("constructor/class");
+  if (agg.constructed > 0 || symbol.kind === "class")
+    hints.add("constructor/class");
 
   if (agg.awaited > 0 || hasAny(members, ["then", "catch", "finally"])) {
     hints.add("promise-like");
   }
 
   if (
-    hasAny(methods, ["map", "filter", "reduce", "forEach", "some", "every", "find"]) ||
+    hasAny(methods, [
+      "map",
+      "filter",
+      "reduce",
+      "forEach",
+      "some",
+      "every",
+      "find",
+    ]) ||
     hasAny(members, ["length"]) ||
     hasAny(methods, ["push", "pop", "shift", "unshift", "slice", "splice"])
   ) {
@@ -329,10 +367,17 @@ function deriveTypeHints(symbol: SymbolInfo, agg: UsageAgg): string[] {
   }
 
   if (
-    hasAny(
-      methods,
-      ["substring", "substr", "slice", "toLowerCase", "toUpperCase", "trim", "split", "replace", "charCodeAt"],
-    )
+    hasAny(methods, [
+      "substring",
+      "substr",
+      "slice",
+      "toLowerCase",
+      "toUpperCase",
+      "trim",
+      "split",
+      "replace",
+      "charCodeAt",
+    ])
   ) {
     hints.add("string-like");
   }
@@ -341,7 +386,13 @@ function deriveTypeHints(symbol: SymbolInfo, agg: UsageAgg): string[] {
     hints.add("map/set-like");
   }
 
-  if (hasAny(methods, ["addEventListener", "removeEventListener", "dispatchEvent"])) {
+  if (
+    hasAny(methods, [
+      "addEventListener",
+      "removeEventListener",
+      "dispatchEvent",
+    ])
+  ) {
     hints.add("event-target-like");
   }
 

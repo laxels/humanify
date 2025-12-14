@@ -11,8 +11,14 @@ export function createAnthropicNameSuggestionProvider({
 }: {
   model?: string;
 }): NameSuggestionProvider {
-  return async (req: ScopeSuggestionRequest): Promise<ScopeSuggestionResponse> => {
-    const content = buildPrompt(req.chunk.summary, req.dossiers, req.maxCandidates);
+  return async (
+    req: ScopeSuggestionRequest,
+  ): Promise<ScopeSuggestionResponse> => {
+    const content = buildPrompt(
+      req.chunk.summary,
+      req.dossiers,
+      req.maxCandidates,
+    );
 
     return await anthropicToolUse<ScopeSuggestionResponse>({
       model,

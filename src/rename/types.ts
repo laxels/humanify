@@ -1,5 +1,5 @@
-import type { Binding, NodePath, Scope } from "../babel-traverse";
 import type { Identifier, Node } from "@babel/types";
+import type { Binding, NodePath, Scope } from "../babel-traverse";
 
 export type SymbolId = string;
 export type ScopeId = string;

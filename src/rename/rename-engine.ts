@@ -45,7 +45,10 @@ export async function renameIdentifiersWithProvider(
 
   const symbolsPerBatch =
     options.symbolsPerBatch ??
-    tryParseNumber(env("HUMANIFY_SYMBOLS_PER_BATCH"), DEFAULT_SYMBOLS_PER_BATCH);
+    tryParseNumber(
+      env("HUMANIFY_SYMBOLS_PER_BATCH"),
+      DEFAULT_SYMBOLS_PER_BATCH,
+    );
 
   const analysis = await analyzeRenaming(code, options.contextWindowSize);
 

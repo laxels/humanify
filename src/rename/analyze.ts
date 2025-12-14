@@ -1,6 +1,6 @@
 import { parseAsync } from "@babel/core";
-import * as t from "@babel/types";
 import type { Node } from "@babel/types";
+import * as t from "@babel/types";
 import type { Binding, NodePath, Scope } from "../babel-traverse";
 import { traverse } from "../babel-traverse";
 import type {

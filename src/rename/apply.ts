@@ -1,8 +1,8 @@
 import { transformFromAstAsync } from "@babel/core";
-import * as t from "@babel/types";
 import type { Node } from "@babel/types";
+import * as t from "@babel/types";
 import { traverse } from "../babel-traverse";
-import type { RenamingAnalysis, RenamePlan, SymbolId } from "./types";
+import type { RenamePlan, RenamingAnalysis, SymbolId } from "./types";
 
 export async function applyRenamePlan(
   analysis: RenamingAnalysis,
@@ -39,7 +39,10 @@ export async function applyRenamePlan(
   return await stringifyAst(analysis.ast, analysis.code);
 }
 
-function preserveObjectShorthandKeys(analysis: RenamingAnalysis, plan: RenamePlan) {
+function preserveObjectShorthandKeys(
+  analysis: RenamingAnalysis,
+  plan: RenamePlan,
+) {
   traverse(analysis.ast, {
     ObjectProperty(path) {
       if (!path.node.shorthand) return;
@@ -53,7 +56,10 @@ function preserveObjectShorthandKeys(analysis: RenamingAnalysis, plan: RenamePla
       let bindingName: string | undefined;
       if (t.isIdentifier(valueNode)) {
         bindingName = valueNode.name;
-      } else if (t.isAssignmentPattern(valueNode) && t.isIdentifier(valueNode.left)) {
+      } else if (
+        t.isAssignmentPattern(valueNode) &&
+        t.isIdentifier(valueNode.left)
+      ) {
         bindingName = valueNode.left.name;
       } else {
         return;

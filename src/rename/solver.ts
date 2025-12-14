@@ -3,8 +3,8 @@ import { toIdentifier } from "@babel/types";
 import type { Scope } from "../babel-traverse";
 import type {
   CandidateName,
-  RenamingAnalysis,
   RenamePlan,
+  RenamingAnalysis,
   ScopeId,
   SymbolInfo,
 } from "./types";
@@ -93,7 +93,9 @@ export function solveRenamePlan(
   return plan;
 }
 
-function groupSymbolsByScope(analysis: RenamingAnalysis): Map<ScopeId, SymbolInfo[]> {
+function groupSymbolsByScope(
+  analysis: RenamingAnalysis,
+): Map<ScopeId, SymbolInfo[]> {
   const map = new Map<ScopeId, SymbolInfo[]>();
   for (const sym of analysis.symbols.values()) {
     const list = map.get(sym.declScopeId) ?? [];
@@ -184,7 +186,10 @@ function chooseNameForSymbol(
   return sym.originalName;
 }
 
-function normalizeCandidates(sym: SymbolInfo, candidates: CandidateName[]): string[] {
+function normalizeCandidates(
+  sym: SymbolInfo,
+  candidates: CandidateName[],
+): string[] {
   const bestByName = new Map<string, number>();
 
   for (const c of candidates) {
@@ -202,7 +207,10 @@ function normalizeCandidates(sym: SymbolInfo, candidates: CandidateName[]): stri
     .map(([name]) => name);
 }
 
-function normalizeCandidateName(sym: SymbolInfo, raw: string): string | undefined {
+function normalizeCandidateName(
+  sym: SymbolInfo,
+  raw: string,
+): string | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
 
