@@ -1,7 +1,9 @@
-import { anthropicToolUse } from "../anthropic/tool-use";
+import { env } from "../env";
+import { parseNumber } from "../number-utils";
 import { showProgress } from "../progress";
 import { verbose } from "../verbose";
-import { visitAllIdentifiers } from "./visit-all-identifiers";
+import { renameIdentifiersWithProvider } from "./rename-engine";
+import { createAnthropicNameSuggestionProvider } from "./suggest";
 
 export async function renameIdentifiers(
   code: string,
@@ -13,37 +15,35 @@ export async function renameIdentifiers(
     contextWindowSize: number;
   },
 ): Promise<string> {
-  return await visitAllIdentifiers(
+  const llmConcurrency = safeParseEnvNumber("HUMANIFY_LLM_CONCURRENCY", 4);
+  const symbolsPerBatch = safeParseEnvNumber("HUMANIFY_SYMBOLS_PER_BATCH", 24);
+
+  if (verbose.enabled) {
+    verbose.log(
+      `Renaming identifiers with batched scope suggestions (concurrency=${llmConcurrency}, batchSize=${symbolsPerBatch})`,
+    );
+  }
+
+  const provider = createAnthropicNameSuggestionProvider({ model });
+
+  return await renameIdentifiersWithProvider(
     code,
-    async (name, surroundingCode) => {
-      verbose.log(`Renaming ${name}`);
-      verbose.log("Context: ", surroundingCode);
-
-      const result = await anthropicToolUse<{ newName: string }>({
-        model,
-        system: `Rename Javascript variables/function \`${name}\` to have descriptive name based on their usage in the code."`,
-        content: surroundingCode,
-        tool: {
-          name: "rename",
-          description: "Provide the new name for the identifier",
-          input_schema: {
-            type: "object" as const,
-            properties: {
-              newName: {
-                type: "string",
-                description: `The new name for the variable/function called \`${name}\``,
-              },
-            },
-            required: ["newName"],
-          },
-        },
-      });
-
-      verbose.log(`Renamed to ${result.newName}`);
-
-      return result.newName;
+    {
+      contextWindowSize,
+      llmConcurrency,
+      symbolsPerBatch,
+      onProgress: showProgress,
     },
-    contextWindowSize,
-    showProgress,
+    provider,
   );
+}
+
+function safeParseEnvNumber(name: string, fallback: number): number {
+  const raw = env(name);
+  if (!raw) return fallback;
+  try {
+    return parseNumber(raw);
+  } catch {
+    return fallback;
+  }
 }

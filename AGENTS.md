@@ -4,7 +4,8 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-Humanify is a CLI tool that uses Anthropic's Claude API to deobfuscate and unminify JavaScript code. The LLM provides variable/function renaming suggestions while Babel handles AST-level transformations to ensure code equivalence.
+Humanify is a CLI tool that uses Anthropic's Claude API to deobfuscate and unminify JavaScript code.
+The LLM proposes better variable/function names while Babel performs AST-level transforms to preserve semantics.
 
 ## Commands
 
@@ -45,27 +46,53 @@ The pipeline is intentionally fixed and lives in `src/pipeline/unminify.ts`:
 2. **AST cleanup** (`src/ast/babel/babel.ts`)
    Semantics-preserving cleanups (void→undefined, flip comparisons, expand scientific notation) plus beautification.
 3. **Identifier renaming** (`src/rename/rename-identifiers.ts`)
-   Calls Claude to propose descriptive names and applies them safely via Babel scope renaming.
+   Builds an AST + scope graph + symbol table, asks Claude for batched per-scope naming suggestions, runs a deterministic global reconciliation step, then applies renames via Babel.
 4. **Formatting** (`src/format/biome.ts`)
    Final code formatting.
 
 ### Identifier Renaming
 
-The renaming logic in `src/rename/visit-all-identifiers.ts`:
+The renaming engine lives in `src/rename/` and follows an AST + scope graph + per-symbol dossier + global solver architecture:
 
-* Parses code to AST with Babel
-* Finds all binding identifiers (variable/function/class declarations)
-* Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
-* For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
-* Uses Babel's `scope.rename()` to safely rename all references
-* Handles name collisions by prefixing with underscores
+* `analyze.ts`
+  Parses code and builds:
+
+  * a symbol table (each binding gets a stable ID)
+  * a scope/chunk map (functions + program)
+  * a taint map for dynamic features (`eval`, `with`, `new Function`) to conservatively skip unsafe renames
+* `dossier.ts`
+  Creates a compact "symbol dossier" per binding:
+
+  * kind (param/const/let/var/function/class/import/catch)
+  * declaration snippet
+  * aggregated usage summary (calls, member accesses, comparisons, etc.)
+  * lightweight type-ish hints (array-like, promise-like, callable, …)
+* `suggest.ts`
+  Batches dossiers per chunk and calls Claude (tool use) to return top-k candidate names per symbol + confidence.
+* `solver.ts`
+  Deterministic global reconciliation step:
+
+  * sanitizes / normalizes identifiers (reserved words, invalid chars)
+  * enforces naming conventions (camelCase, PascalCase; UPPER_SNAKE for literal `const` values)
+  * prevents collisions within a scope and avoids shadowing hazards at reference sites
+* `apply.ts`
+  Applies renames via `scope.rename()` and runs safety transforms:
+
+  * rewrites object literal/pattern shorthand `{a}` → `{a: renamed}` to preserve property keys
+  * rewrites `export <declaration>` into `declaration + export { local as original }` when needed to preserve exported names
+
+Environment knobs:
+
+* `HUMANIFY_LLM_CONCURRENCY` (default 4): parallel Claude calls
+* `HUMANIFY_SYMBOLS_PER_BATCH` (default 24): number of symbols per scope batch
 
 ### Anthropic Integration
 
 `src/anthropic/tool-use.ts` wraps the Anthropic SDK:
 
 * Uses extended thinking (default 50k budget) for better reasoning
-* Uses tool use to get structured responses (e.g. `{ newName: string }`)
+* Uses tool use to get structured responses (e.g. batched name suggestions)
+* Adds retry/backoff for transient failures to support higher concurrency
 * Default model: `claude-opus-4-5`
 
 ### Test File Conventions
