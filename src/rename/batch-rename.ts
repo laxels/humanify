@@ -236,7 +236,7 @@ export async function processScope(
 export async function processAllScopes(
   symbolTable: SymbolTable,
   options: BatchRenameOptions = {},
-  maxConcurrency = 5,
+  maxConcurrency = 100,
   onProgress?: (completed: number, total: number) => void,
 ): Promise<BatchRenameResult> {
   const allCandidates: BatchRenameResult = { renames: [] };

@@ -33,7 +33,7 @@ export async function renameIdentifiers(
   options: RenameOptions = {},
   onProgress?: (done: number, total: number) => void,
 ): Promise<string> {
-  const { model, maxConcurrency = 5, minConfidence = 0 } = options;
+  const { model, maxConcurrency = 100, minConfidence = 0 } = options;
 
   // Handle empty code
   if (!code || code.trim().length === 0) {
