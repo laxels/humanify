@@ -1,5 +1,4 @@
 import { toIdentifier } from "@babel/types";
-import * as t from "@babel/types";
 import type { CandidateName, NamingStyle, RenameSymbol, ScopeMeta } from "./types";
 
 const RESERVED_WORDS = new Set([
@@ -156,19 +155,46 @@ export function solveRenamePlan(args: {
       const list = candidatesBySymbol.get(s.id) ?? [];
 
       const style = inferNamingStyle(s, suggestionsBySymbolId.get(s.id) ?? []);
-      const preferredFallback = sanitizeIdentifier(s.originalName, style);
+      const originalNormalized = sanitizeIdentifier(s.originalName, style);
+      const preferredFallback = originalNormalized;
 
-      const pick = pickFirstAvailableName({
-        desired: list.map((c) => c.name),
+      const keepConf = keepOriginalConfidenceBySymbol.get(s.id) ?? 0;
+
+      const desiredAll = list.map((c) => c.name);
+
+      // If the model did not explicitly endorse keeping the current name, treat
+      // the original identifier as a last-resort fallback. This prevents us from
+      // "giving up" and keeping minified names just because the top suggestion
+      // collides with another symbol in the same scope.
+      let desired = desiredAll;
+      if (keepConf <= 0 && desiredAll.length > 1) {
+        const filtered = desiredAll.filter((n) => n !== originalNormalized);
+        if (filtered.length > 0) desired = filtered;
+      }
+
+      // Prefer a non-conflicting candidate when possible; otherwise, take the
+      // best candidate and disambiguate it (e.g. foo -> _foo) deterministically.
+      const pick =
+        desired.find(
+          (name) =>
+            !isTakenInScopeChain(
+              name,
+              scopeId,
+              allocatedByScope,
+              scopeMetaById,
+              allocatedHere,
+            ),
+        ) ?? undefined;
+
+      const base = ensureNotReserved(pick ?? desired[0] ?? preferredFallback);
+
+      const unique = makeUniqueInScopeChain(
+        base,
         scopeId,
         allocatedByScope,
         scopeMetaById,
         allocatedHere,
-      });
-
-      const chosen = ensureNotReserved(pick ?? preferredFallback);
-
-      const unique = makeUniqueInScopeChain(chosen, scopeId, allocatedByScope, scopeMetaById, allocatedHere);
+      );
 
       finalNameBySymbolId.set(s.id, unique);
       allocatedHere.add(unique);
@@ -301,21 +327,6 @@ function ensureNotReserved(name: string): string {
   return `_${name}`;
 }
 
-function pickFirstAvailableName(args: {
-  desired: string[];
-  scopeId: string;
-  allocatedByScope: Map<string, Set<string>>;
-  scopeMetaById: Map<string, ScopeMeta>;
-  allocatedHere: Set<string>;
-}): string | undefined {
-  for (const d of args.desired) {
-    const candidate = ensureNotReserved(d);
-    if (!isTakenInScopeChain(candidate, args.scopeId, args.allocatedByScope, args.scopeMetaById, args.allocatedHere)) {
-      return candidate;
-    }
-  }
-  return undefined;
-}
 
 function makeUniqueInScopeChain(
   base: string,
