@@ -80,7 +80,7 @@ export async function renameIdentifiersWithProvider(
         dossiers: task.dossiers,
         maxCandidates: task.maxCandidates,
       }).catch((err) => {
-        verbose.log("LLM suggestion batch failed", err);
+        console.error("LLM suggestion batch failed", err);
         return {
           suggestions: task.dossiers.map((d) => ({ id: d.id, candidates: [] })),
         } as ScopeSuggestionResponse;
