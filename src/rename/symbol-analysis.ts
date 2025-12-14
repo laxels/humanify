@@ -92,6 +92,12 @@ export async function analyzeCode(code: string): Promise<AnalyzedCode> {
   let nextSymbolId = 1;
 
   traverse(ast, {
+    Program(path) {
+      // Ensure the root Program chunk always exists, even if there are no top-level bindings.
+      // The renaming job planner starts from this Program chunk.
+      ensureChunk(path.scope, chunksByUid);
+    },
+
     BindingIdentifier(path: NodePath<t.Identifier>) {
       const binding = resolveBindingForIdentifierPath(path);
       if (!binding) return;

@@ -9,6 +9,8 @@ import { verbose } from "../verbose";
 export type UnminifyOptions = {
   model?: string;
   contextWindowSize: number;
+  maxSymbolsPerJob: number;
+  maxInputTokens: number;
 };
 
 export async function unminify(

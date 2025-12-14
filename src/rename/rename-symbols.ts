@@ -8,6 +8,7 @@ import {
   scopeIdFromUid,
 } from "./ast-fixes";
 import { type SymbolForNaming, solveSymbolNames } from "./constraint-solver";
+import { planRenameJobs } from "./plan-rename-jobs";
 import { analyzeCode } from "./symbol-analysis";
 import { buildSymbolDossier } from "./symbol-dossier";
 import type {
@@ -21,6 +22,13 @@ import type {
 export type RenameSymbolsOptions = {
   contextWindowSize: number;
   suggestNames: SuggestNames;
+  countInputTokens: (job: {
+    chunkId: string;
+    scopeSummary: string;
+    symbols: SymbolDossier[];
+  }) => Promise<number>;
+  maxSymbolsPerJob: number;
+  maxInputTokens: number;
   onProgress?: (done: number, total: number) => void;
 
   /**
@@ -35,6 +43,9 @@ export async function renameSymbols(
   {
     contextWindowSize,
     suggestNames,
+    countInputTokens,
+    maxSymbolsPerJob,
+    maxInputTokens,
     onProgress,
     concurrency = 4,
   }: RenameSymbolsOptions,
@@ -77,16 +88,16 @@ export async function renameSymbols(
   // Run scope-batch name suggestions (parallelized).
   let done = 0;
 
-  const chunkJobs = chunks
-    .filter((c) => (dossiersByChunkId.get(c.id)?.length ?? 0) > 0)
-    .map((chunk) => ({
-      chunkId: chunk.id,
-      scopeSummary: truncateScope(chunk.path.toString(), contextWindowSize),
-      symbols: dossiersByChunkId.get(chunk.id)!,
-    }));
+  const jobs = await planRenameJobs({
+    chunks,
+    dossiersByChunkId,
+    maxSymbolsPerJob: Math.max(1, Math.floor(maxSymbolsPerJob)),
+    maxInputTokens: Math.max(1, Math.floor(maxInputTokens)),
+    countInputTokens,
+  });
 
   const suggestionResults = await mapWithConcurrency(
-    chunkJobs,
+    jobs,
     concurrency,
     async (job) => {
       const suggestions = await safeSuggestNames(suggestNames, job);
@@ -243,9 +254,4 @@ async function assertParseable(code: string): Promise<void> {
   if (!parsed) {
     throw new Error("Validation failed: output is not parseable");
   }
-}
-
-function truncateScope(scopeCode: string, max: number): string {
-  if (scopeCode.length <= max) return scopeCode;
-  return `${scopeCode.slice(0, Math.max(0, max - 1))}…`;
 }

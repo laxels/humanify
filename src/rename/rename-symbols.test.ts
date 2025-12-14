@@ -4,6 +4,13 @@ import { analyzeCode } from "./symbol-analysis";
 import { buildSymbolDossier } from "./symbol-dossier";
 import type { SuggestNames } from "./types";
 
+const defaultJobPlanningOptions = {
+  // Unit tests must not hit the network; job planning uses an injected token counter.
+  countInputTokens: async () => 1,
+  maxSymbolsPerJob: 10_000,
+  maxInputTokens: 1_000_000,
+} as const;
+
 function suggestNoOp(): SuggestNames {
   return async ({ symbols }) =>
     symbols.map((s) => ({
@@ -35,6 +42,7 @@ test("no-op returns the same code", async () => {
   const code = `let a = 1;`;
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestNoOp(),
       concurrency: 1,
@@ -46,6 +54,7 @@ test("no-op returns the same empty code", async () => {
   const code = "";
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestNoOp(),
       concurrency: 1,
@@ -57,6 +66,7 @@ test("renames a simple variable", async () => {
   const code = `let a = 1;`;
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestFromMap({ a: "b" }),
       concurrency: 1,
@@ -81,6 +91,7 @@ let b = 1;
 
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestFromMap({ a: "b" }),
       concurrency: 1,
@@ -105,6 +116,7 @@ let c = 1;
 
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestFromSequence(["c", "d"]),
       concurrency: 1,
@@ -126,6 +138,7 @@ class _Foo {
 
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestFromMap({ Foo: "_Foo" }),
       concurrency: 1,
@@ -152,6 +165,7 @@ e.b;
 
   expect(
     await renameSymbols(code, {
+      ...defaultJobPlanningOptions,
       contextWindowSize: 200,
       suggestNames: suggestFromMap({ c: "d", a: "e" }),
       concurrency: 1,
@@ -162,6 +176,7 @@ e.b;
 test("should handle invalid identifiers", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "this.kLength" }),
     concurrency: 1,
@@ -172,6 +187,7 @@ test("should handle invalid identifiers", async () => {
 test("should handle space in identifier name", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "foo bar" }),
     concurrency: 1,
@@ -182,6 +198,7 @@ test("should handle space in identifier name", async () => {
 test("should handle reserved identifiers", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "static" }),
     concurrency: 1,
@@ -196,6 +213,7 @@ let b = 1;
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "foo", b: "foo" }),
     concurrency: 1,
@@ -216,6 +234,7 @@ let bar = 2;
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ foo: "bar", bar: "bar" }),
     concurrency: 1,
@@ -240,6 +259,7 @@ function outer() {
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 400,
     suggestNames: suggestFromMap({ a: "value", b: "value" }),
     concurrency: 1,
@@ -264,6 +284,7 @@ const obj = { a };
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "userId" }),
     concurrency: 1,
@@ -285,6 +306,7 @@ const { a } = obj;
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "userId" }),
     concurrency: 1,
@@ -307,6 +329,7 @@ export function a() {
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 400,
     suggestNames: suggestFromMap({ a: "getValue" }),
     concurrency: 1,
@@ -328,6 +351,7 @@ export const a = 1;
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "maxRetries" }),
     concurrency: 1,
@@ -349,6 +373,7 @@ export { a };
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "value" }),
     concurrency: 1,
@@ -369,6 +394,7 @@ console.log(a);
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 200,
     suggestNames: suggestFromMap({ a: "value" }),
     concurrency: 1,
@@ -392,6 +418,7 @@ function foo() {
 `.trim();
 
   const result = await renameSymbols(code, {
+    ...defaultJobPlanningOptions,
     contextWindowSize: 400,
     suggestNames: suggestFromMap({ a: "value", foo: "doThing" }),
     concurrency: 1,
