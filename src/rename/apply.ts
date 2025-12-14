@@ -77,7 +77,15 @@ function preserveObjectShorthandKeys(analysis: RenamingAnalysis, plan: RenamePla
       // If we rename `a -> userId` and keep shorthand, we change the runtime property key.
       // Fix: rewrite to `{ a: userId }` by cloning the key node and disabling shorthand.
       path.node.shorthand = false;
-      path.node.key = t.identifier(bindingName);
+
+      // Clone the key node so it does not get renamed along with the value identifier.
+      // (In shorthand properties/patterns, key and value may share the same Identifier node.)
+      if (t.isIdentifier(path.node.key)) {
+        path.node.key = t.cloneNode(path.node.key);
+        path.node.key.name = bindingName;
+      } else {
+        path.node.key = t.identifier(bindingName);
+      }
       // value stays as-is and will be renamed by scope.rename.
     },
   });
@@ -137,7 +145,7 @@ async function stringifyAst(ast: Node, code: string): Promise<string> {
     minified: false,
     comments: false,
     sourceMaps: false,
-    retainLines: false,
+    retainLines: true,
   });
 
   if (!result?.code) {

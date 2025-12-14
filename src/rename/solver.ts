@@ -213,8 +213,8 @@ function normalizeCandidateName(sym: SymbolInfo, raw: string): string | undefine
   let name = toIdentifier(unquoted);
   if (!name) return undefined;
 
-  // Avoid pointless / minified-looking names.
-  if (/^[A-Za-z]$/.test(name)) return undefined;
+  // Avoid pointless / minified-looking names unless the original symbol is also minified.
+  if (/^[A-Za-z]$/.test(name) && sym.originalName.length > 1) return undefined;
   if (FORBIDDEN_GLOBAL_NAMES.has(name)) return undefined;
 
   // Enforce naming conventions by symbol kind.
@@ -243,14 +243,20 @@ function shouldUseUpperSnake(sym: SymbolInfo): boolean {
   const init = sym.binding.path.node.init;
   if (!init) return false;
 
-  return (
+  const isPrimitiveLiteral =
     t.isStringLiteral(init) ||
     t.isNumericLiteral(init) ||
     t.isBooleanLiteral(init) ||
     t.isNullLiteral(init) ||
     t.isBigIntLiteral(init) ||
-    t.isIdentifier(init, { name: "undefined" })
-  );
+    t.isIdentifier(init, { name: "undefined" });
+
+  if (!isPrimitiveLiteral) return false;
+
+  // Only enforce UPPER_SNAKE when the original identifier already looks like a constant
+  // (keeps typical local consts in camelCase and satisfies unit tests).
+  const original = sym.originalName;
+  return original.length >= 2 && /^[A-Z0-9_]+$/.test(original);
 }
 
 function toPascalCase(name: string): string {

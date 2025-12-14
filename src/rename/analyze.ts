@@ -230,11 +230,13 @@ function getExportMeta(path: NodePath<t.Identifier>): {
 }
 
 function classifySymbolKind(binding: Binding): SymbolKind {
-  if (binding.kind === "param") return "param";
-  if (binding.kind === "module") return "import";
-  if (binding.kind === "const") return "const";
-  if (binding.kind === "let") return "let";
-  if (binding.kind === "var") return "var";
+  // Prefer the actual AST node kind first. Babel often reports class declarations as `let`
+  // bindings, which would otherwise cause class names to be treated like variables.
+  if (binding.path.isCatchClause()) return "catch";
+
+  if (binding.path.isClassDeclaration() || binding.path.isClassExpression()) {
+    return "class";
+  }
 
   if (
     binding.path.isFunctionDeclaration() ||
@@ -244,11 +246,12 @@ function classifySymbolKind(binding: Binding): SymbolKind {
     return "function";
   }
 
-  if (binding.path.isClassDeclaration() || binding.path.isClassExpression()) {
-    return "class";
-  }
-
-  if (binding.path.isCatchClause()) return "catch";
+  // Fall back to Babel's binding.kind for normal variable/import/param bindings.
+  if (binding.kind === "param") return "param";
+  if (binding.kind === "module") return "import";
+  if (binding.kind === "const") return "const";
+  if (binding.kind === "let") return "let";
+  if (binding.kind === "var") return "var";
 
   return "unknown";
 }
