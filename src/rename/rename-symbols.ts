@@ -187,7 +187,8 @@ async function safeSuggestNames(
     }
 
     return cleaned;
-  } catch {
+  } catch (err) {
+    console.error("Failed to suggest names for chunk", job.chunkId, err);
     // If a batch fails, fall back to "no suggestions" for that chunk.
     // The solver will keep original names for missing suggestions.
     return job.symbols.map((s) => ({
