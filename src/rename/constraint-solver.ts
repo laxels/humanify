@@ -154,7 +154,7 @@ function solveExact(
 
   const suffixBest = new Array<number>(bestRemainingScore.length + 1).fill(0);
   for (let i = bestRemainingScore.length - 1; i >= 0; i--) {
-    suffixBest[i] = suffixBest[i + 1] + bestRemainingScore[i]!;
+    suffixBest[i] = (suffixBest[i + 1] ?? 0) + bestRemainingScore[i]!;
   }
 
   const dfs = (idx: number, scoreSoFar: number) => {

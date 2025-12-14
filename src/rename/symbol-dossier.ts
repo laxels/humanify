@@ -272,7 +272,7 @@ function collectChainedCalledMethods(
   let current: NodePath | null = callPath;
 
   while (current) {
-    const parent = current.parentPath;
+    const parent: NodePath | null = current.parentPath;
     if (!parent) break;
 
     const isMemberExpression =
@@ -287,7 +287,7 @@ function collectChainedCalledMethods(
     const propertyName = getStaticMemberName(parent);
     if (!propertyName) break;
 
-    const maybeCall = parent.parentPath;
+    const maybeCall: NodePath | null = parent.parentPath;
     if (maybeCall?.isCallExpression() && maybeCall.get("callee") === parent) {
       calledMethods.add(propertyName);
       current = maybeCall;
