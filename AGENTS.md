@@ -51,14 +51,37 @@ The pipeline is intentionally fixed and lives in `src/pipeline/unminify.ts`:
 
 ### Identifier Renaming
 
-The renaming logic in `src/rename/visit-all-identifiers.ts`:
+The renaming system uses an AST + scope graph + per-symbol naming + global constraint solver architecture:
 
-* Parses code to AST with Babel
-* Finds all binding identifiers (variable/function/class declarations)
-* Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
-* For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
-* Uses Babel's `scope.rename()` to safely rename all references
-* Handles name collisions by prefixing with underscores
+1. **Analysis Phase** (`src/analysis/`)
+   - `scope-analyzer.ts`: Parses code to AST, builds scope tree and symbol table
+   - `symbol-dossier.ts`: Extracts detailed "dossiers" for each binding with:
+     - Declaration kind (var/let/const/function/class/param/catch/import)
+     - Surrounding context and all use sites
+     - Type hints inferred from usage patterns (e.g., methods called, awaited, etc.)
+
+2. **Batch LLM Renaming** (`src/rename/batch-rename.ts`)
+   - Groups symbols by scope for efficient batching
+   - Calls Claude in parallel across scopes to get multiple name candidates per symbol
+   - Each candidate includes confidence score and rationale
+
+3. **Constraint Solving** (`src/rename/constraint-solver.ts`)
+   - Selects best names while enforcing constraints:
+     - No collisions within a scope
+     - Valid JavaScript identifiers (no reserved words)
+     - Naming conventions (PascalCase for classes, etc.)
+   - Processes scopes largest-first so outer scopes are resolved before inner
+
+4. **AST Transform** (`src/rename/apply-renames.ts`)
+   - Applies resolved renames via Babel's `scope.rename()`
+   - Handles special cases:
+     - Object shorthand: `{foo}` → `{foo: newName}` to preserve property key
+     - Export specifiers: preserves exported names
+
+5. **Validation** (`src/rename/validator.ts`)
+   - Verifies output is parseable
+   - Checks for undefined references, reserved word usage
+   - Warns about suspicious names and shadowing
 
 ### Anthropic Integration
 

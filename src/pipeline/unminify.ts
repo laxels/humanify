@@ -2,13 +2,17 @@ import fs from "fs/promises";
 import babel from "../ast/babel/babel";
 import { ensureFileExists } from "../file-utils";
 import biome from "../format/biome";
+import { showProgress } from "../progress";
 import { renameIdentifiers } from "../rename/rename-identifiers";
 import { webcrack } from "../unpack/webcrack";
 import { verbose } from "../verbose";
 
 export type UnminifyOptions = {
   model?: string;
-  contextWindowSize: number;
+  /** @deprecated Not used in new architecture, kept for CLI compatibility */
+  contextWindowSize?: number;
+  /** Maximum concurrent scope processing */
+  maxConcurrency?: number;
 };
 
 export async function unminify(
@@ -34,7 +38,14 @@ export async function unminify(
     }
 
     const babelCleaned = await babel(code);
-    const renamed = await renameIdentifiers(babelCleaned, options);
+    const renamed = await renameIdentifiers(
+      babelCleaned,
+      {
+        model: options.model,
+        maxConcurrency: options.maxConcurrency,
+      },
+      showProgress,
+    );
     const formattedCode = await biome(renamed);
 
     verbose.log("Input: ", code);
