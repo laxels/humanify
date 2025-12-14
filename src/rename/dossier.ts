@@ -146,7 +146,11 @@ export function buildSymbolDossier(
 
     binaryOps: topEntries(binaryOps, maxEntriesPerSection, "op"),
 
-    comparedToLiterals: topEntries(comparedToLiterals, maxEntriesPerSection, "literal"),
+    comparedToLiterals: topEntries(
+      comparedToLiterals,
+      maxEntriesPerSection,
+      "literal",
+    ),
 
     typeHints,
   };
@@ -234,7 +238,10 @@ function topEntries<K extends string>(
   return Array.from(map.entries())
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, max)
-    .map(([key, count]) => ({ [keyName]: key, count }) as { [P in K]: string } & { count: number });
+    .map(
+      ([key, count]) =>
+        ({ [keyName]: key, count }) as { [P in K]: string } & { count: number },
+    );
 }
 
 function topNumberEntries(
