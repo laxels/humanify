@@ -51,14 +51,36 @@ The pipeline is intentionally fixed and lives in `src/pipeline/unminify.ts`:
 
 ### Identifier Renaming
 
-The renaming logic in `src/rename/visit-all-identifiers.ts`:
+The renaming logic now follows an **AST + Scope Graph + Per-Symbol Dossiers + Global Constraint Solver** architecture:
 
-* Parses code to AST with Babel
-* Finds all binding identifiers (variable/function/class declarations)
-* Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
-* For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
-* Uses Babel's `scope.rename()` to safely rename all references
-* Handles name collisions by prefixing with underscores
+* Parses code to AST with Babel and builds:
+  * **Scope graph** (lexical scopes) + stable scope IDs
+  * **Symbol table** where each binding gets a stable symbol ID (sorted by source order)
+* Runs **safety prepasses** before renaming:
+  * Expands object/destucturing shorthand to explicit form so renaming cannot change runtime keys:
+    * `{a}` → `{a: a}`, `{a} = obj` → `{a: a} = obj`
+  * Splits `export`ed declarations so local renames preserve the public export name:
+    * `export const a = 1;` → `const a = 1; export { a };`
+* Extracts a compact **symbol dossier** per binding:
+  * Declaration snippet
+  * Use-site summaries (member access, call/new sites, operators, literals compared against, etc.)
+  * Lightweight "type-ish" hints (array-like, promise-like, string-like, …)
+* **Batches LLM requests by naming unit** (program/function/class) and parallelizes them with a concurrency limit.
+  * Each batch asks for **top‑k candidate names per symbol** + confidence + short rationale.
+* Runs a deterministic **global reconciliation / constraint solver**:
+  * Enforces valid identifiers + reserved-word handling
+  * Enforces **no collisions** within scopes and avoids introducing new shadowing
+  * Prefers "keep original" when the model indicates the current name should remain
+* Applies renames with Babel via a **two-phase rename** (temporary → final) to avoid swap/collision hazards.
+* Validates output is parseable.
+
+Key entry points:
+* Analysis + prepasses: `src/rename/analyze.ts`
+* Dossiers: `src/rename/dossier.ts`
+* Suggestions: `src/rename/suggest-names.ts`
+* Constraint solver: `src/rename/constraints.ts`
+* Rename application: `src/rename/apply-renames.ts`
+* Orchestration: `src/rename/rename-identifiers.ts`
 
 ### Anthropic Integration
 

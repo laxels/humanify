@@ -10,5 +10,5 @@ The processing pipeline is fixed:
 
 1. Unpack bundles (Webcrack)
 2. AST cleanup (Babel)
-3. Identifier renaming (Claude suggestions applied via Babel scope renaming)
+3. Identifier renaming (**AST + scope graph + per-symbol dossiers + batched Claude suggestions + deterministic global constraint solver**, applied via Babel scope renaming)
 4. Final formatting (Biome)

@@ -1,21 +1,44 @@
 import { expect, test } from "bun:test";
-import { visitAllIdentifiers } from "./visit-all-identifiers";
+import { renameIdentifiersWithProvider } from "./rename-identifiers";
 
 test("no-op returns the same code", async () => {
   const code = `const a = 1;`;
-  expect(await visitAllIdentifiers(code, async (name) => name, 200)).toBe(code);
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 500 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName, confidence: 1 }],
+      }));
+    },
+  );
+  expect(result).toBe(code);
 });
 
 test("no-op returns the same empty code", async () => {
   const code = "";
-  expect(await visitAllIdentifiers(code, async (name) => name, 200)).toBe(code);
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 500 },
+    async () => [],
+  );
+  expect(result).toBe(code);
 });
 
 test("renames a simple variable", async () => {
   const code = `const a = 1;`;
-  expect(await visitAllIdentifiers(code, async () => "b", 200)).toBe(
-    `const b = 1;`,
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 500 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName === "a" ? "b" : d.originalName, confidence: 1 }],
+      }));
+    },
   );
+  expect(result).toBe(`const b = 1;`);
 });
 
 test("renames variables even if they have different scopes", async () => {
@@ -25,34 +48,60 @@ const a = 1;
   a = 2;
 });
   `.trim();
+
   const expected = `
 const b = 1;
 (function () {
   b = 2;
 });
   `.trim();
-  expect(await visitAllIdentifiers(code, async () => "b", 200)).toBe(expected);
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName === "a" ? "b" : d.originalName, confidence: 1 }],
+      }));
+    },
+  );
+
+  expect(result).toBe(expected);
 });
 
-test("renames two scopes, starting from largest scope to smallest", async () => {
+test("renames two scopes", async () => {
   const code = `
 const a = 1;
 (function () {
   const b = 2;
 });
   `.trim();
+
   const expected = `
 const c = 1;
 (function () {
   const d = 2;
 });
   `.trim();
-  let i = 0;
-  const result = await visitAllIdentifiers(
+
+  const result = await renameIdentifiersWithProvider(
     code,
-    async () => ["c", "d"][i++] ?? "",
-    200,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [
+          {
+            name:
+              d.originalName === "a" ? "c" : d.originalName === "b" ? "d" : d.originalName,
+            confidence: 1,
+          },
+        ],
+      }));
+    },
   );
+
   expect(result).toBe(expected);
 });
 
@@ -63,18 +112,31 @@ const a = 1;
   const a = 2;
 });
     `.trim();
+
   const expected = `
 const c = 1;
 (function () {
   const d = 2;
 });
     `.trim();
-  let i = 0;
-  const result = await visitAllIdentifiers(
+
+  const result = await renameIdentifiersWithProvider(
     code,
-    async () => ["c", "d"][i++] ?? "",
-    200,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => {
+        // Disambiguate shadowed `a` bindings by declaration context.
+        if (d.originalName === "a" && d.declaration.includes("= 1")) {
+          return { id: d.id, candidates: [{ name: "c", confidence: 1 }] };
+        }
+        if (d.originalName === "a" && d.declaration.includes("= 2")) {
+          return { id: d.id, candidates: [{ name: "d", confidence: 1 }] };
+        }
+        return { id: d.id, candidates: [{ name: d.originalName, confidence: 1 }] };
+      });
+    },
   );
+
   expect(result).toBe(expected);
 });
 
@@ -84,129 +146,24 @@ class Foo {
   bar() {}
 }
     `.trim();
+
   const expected = `
 class _Foo {
   bar() {}
 }`.trim();
-  expect(await visitAllIdentifiers(code, async (name) => "_" + name, 200)).toBe(
-    expected,
-  );
-});
 
-test("passes surrounding scope as an argument", async () => {
-  const code = `
-const a = 1;
-function foo() {
-  const b = 2;
-
-  class Bar {
-    baz = 3;
-    hello() {
-      const y = 123;
-    }
-  }
-};
-    `.trim();
-
-  const varnameScopeTuples: [string, string][] = [];
-  await visitAllIdentifiers(
+  const result = await renameIdentifiersWithProvider(
     code,
-    async (name, scope) => {
-      varnameScopeTuples.push([name, scope]);
-      return name + "_changed";
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: `_${d.originalName}`, confidence: 1 }],
+      }));
     },
-    200,
   );
-  expect(varnameScopeTuples).toEqual([
-    [
-      "a",
-      "const a = 1;\nfunction foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}\n;",
-    ],
-    [
-      "foo",
-      "function foo() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}",
-    ],
-    [
-      "b",
-      "function foo_changed() {\n  const b = 2;\n  class Bar {\n    baz = 3;\n    hello() {\n      const y = 123;\n    }\n  }\n}",
-    ],
-    ["Bar", "class Bar {\n  baz = 3;\n  hello() {\n    const y = 123;\n  }\n}"],
-    ["y", "hello() {\n  const y = 123;\n}"],
-  ]);
-});
 
-test("scopes are renamed from largest to smallest", async () => {
-  const code = `
-function foo() {
-  function bar() {
-    function baz() {
-    }
-  }
-  function qux() {
-  }
-}`.trim();
-  const names: string[] = [];
-  await visitAllIdentifiers(
-    code,
-    async (name) => {
-      names.push(name);
-      return name;
-    },
-    200,
-  );
-  expect(names).toEqual(["foo", "bar", "baz", "qux"]);
-});
-
-test("should rename each variable only once", async () => {
-  const code = `
-function a(e, t) {
-  var n = [];
-  var r = e.length;
-  var i = 0;
-  for (; i < r; i += t) {
-    if (i + t < r) {
-      n.push(e.substring(i, i + t));
-    } else {
-      n.push(e.substring(i, r));
-    }
-  }
-  return n;
-}`.trim();
-  const names: string[] = [];
-  await visitAllIdentifiers(
-    code,
-    async (name) => {
-      names.push(name);
-      return name + "_changed";
-    },
-    200,
-  );
-  expect(names).toEqual(["a", "e", "t", "n", "r", "i"]);
-});
-
-test("should have a scope from where the variable was declared", async () => {
-  const code = `
-function foo() {
-  let a = 1;
-  if (a == 2) {
-    if (a == 1) {
-      a.toString();
-    }
-  }
-}
-  `.trim();
-  let scope: string | undefined;
-  await visitAllIdentifiers(
-    code,
-    async (name, surroundingCode) => {
-      if (name === "a") {
-        scope = surroundingCode;
-      }
-      return name;
-    },
-    200,
-  );
-  expect(scope).toBe(code);
+  expect(result).toBe(expected);
 });
 
 test("should not rename object properties", async () => {
@@ -217,6 +174,7 @@ const a = {
 };
 a.b;
   `.trim();
+
   const expected = `
 const d = 2;
 const e = {
@@ -224,38 +182,126 @@ const e = {
 };
 e.b;
   `.trim();
-  expect(
-    await visitAllIdentifiers(
-      code,
-      async (name) => {
-        if (name === "c") return "d";
-        if (name === "a") return "e";
-        return "_" + name;
-      },
-      200,
-    ),
-  ).toBe(expected);
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => {
+        if (d.originalName === "c") return { id: d.id, candidates: [{ name: "d", confidence: 1 }] };
+        if (d.originalName === "a") return { id: d.id, candidates: [{ name: "e", confidence: 1 }] };
+        return { id: d.id, candidates: [{ name: d.originalName, confidence: 1 }] };
+      });
+    },
+  );
+
+  expect(result).toBe(expected);
+});
+
+test("preserves object literal shorthand keys when renaming", async () => {
+  const code = `
+const a = 1;
+const obj = {
+  a
+};
+obj.a;
+  `.trim();
+
+  const expected = `
+const userId = 1;
+const obj = {
+  a: userId
+};
+obj.a;
+  `.trim();
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName === "a" ? "userId" : d.originalName, confidence: 1 }],
+      }));
+    },
+  );
+
+  expect(result).toBe(expected);
+});
+
+test("preserves destructuring shorthand keys when renaming", async () => {
+  const code = `
+const obj = { a: 1 };
+const { a } = obj;
+a;
+  `.trim();
+
+  const expected = `
+const obj = {
+  a: 1
+};
+const {
+  a: userId
+} = obj;
+userId;
+  `.trim();
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 1000 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName === "a" ? "userId" : d.originalName, confidence: 1 }],
+      }));
+    },
+  );
+
+  expect(result).toBe(expected);
 });
 
 test("should handle invalid identifiers", async () => {
   const code = `const a = 1`;
-  const result = await visitAllIdentifiers(
+  const result = await renameIdentifiersWithProvider(
     code,
-    async () => "this.kLength",
-    200,
+    { contextWindowSize: 500 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: "this.kLength", confidence: 1 }],
+      }));
+    },
   );
   expect(result).toBe("const thisKLength = 1;");
 });
 
-test("should handle space in identifier name (happens for some reason though it shouldn't)", async () => {
+test("should handle space in identifier name", async () => {
   const code = `const a = 1`;
-  const result = await visitAllIdentifiers(code, async () => "foo bar", 200);
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 500 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: "foo bar", confidence: 1 }],
+      }));
+    },
+  );
   expect(result).toBe("const fooBar = 1;");
 });
 
 test("should handle reserved identifiers", async () => {
   const code = `const a = 1`;
-  const result = await visitAllIdentifiers(code, async () => "static", 200);
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 500 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: "static", confidence: 1 }],
+      }));
+    },
+  );
   expect(result).toBe("const _static = 1;");
 });
 
@@ -264,7 +310,18 @@ test("should handle multiple identifiers named the same", async () => {
 const a = 1;
 const b = 1;
 `.trim();
-  const result = await visitAllIdentifiers(code, async () => "foo", 200);
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 600 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: "foo", confidence: 1 }],
+      }));
+    },
+  );
+
   expect(result).toBe(
     `
 const foo = 1;
@@ -278,7 +335,20 @@ test("should handle multiple properties with the same name", async () => {
 const foo = 1;
 const bar = 2;
 `.trim();
-  const result = await visitAllIdentifiers(code, async () => "bar", 200);
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 600 },
+    async ({ dossiers }) => {
+      // Suggest "bar" for both bindings; solver should keep the symbol already named "bar"
+      // and rename the other to avoid collision.
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: "bar", confidence: 1 }],
+      }));
+    },
+  );
+
   expect(result).toBe(
     `
 const _bar = 1;
@@ -287,13 +357,24 @@ const bar = 2;
   );
 });
 
-test("should not craash to 'arguments' assigning", async () => {
+test("should not crash on 'arguments' assigning", async () => {
   const code = `
 function foo() {
   arguments = '??';
 }
 `.trim();
-  const result = await visitAllIdentifiers(code, async () => "foobar", 200);
+
+  const result = await renameIdentifiersWithProvider(
+    code,
+    { contextWindowSize: 800 },
+    async ({ dossiers }) => {
+      return dossiers.map((d) => ({
+        id: d.id,
+        candidates: [{ name: d.originalName === "foo" ? "foobar" : d.originalName, confidence: 1 }],
+      }));
+    },
+  );
+
   expect(result).toBe(
     `
 function foobar() {
