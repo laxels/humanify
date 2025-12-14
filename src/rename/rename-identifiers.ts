@@ -5,6 +5,9 @@ import { verbose } from "../verbose";
 import { renameIdentifiersWithProvider } from "./rename-engine";
 import { createAnthropicNameSuggestionProvider } from "./suggest";
 
+const DEFAULT_LLM_CONCURRENCY = 100;
+const DEFAULT_SYMBOLS_PER_BATCH = 24;
+
 export async function renameIdentifiers(
   code: string,
   {
@@ -15,8 +18,14 @@ export async function renameIdentifiers(
     contextWindowSize: number;
   },
 ): Promise<string> {
-  const llmConcurrency = safeParseEnvNumber("HUMANIFY_LLM_CONCURRENCY", 4);
-  const symbolsPerBatch = safeParseEnvNumber("HUMANIFY_SYMBOLS_PER_BATCH", 24);
+  const llmConcurrency = safeParseEnvNumber(
+    "HUMANIFY_LLM_CONCURRENCY",
+    DEFAULT_LLM_CONCURRENCY,
+  );
+  const symbolsPerBatch = safeParseEnvNumber(
+    "HUMANIFY_SYMBOLS_PER_BATCH",
+    DEFAULT_SYMBOLS_PER_BATCH,
+  );
 
   if (verbose.enabled) {
     verbose.log(
