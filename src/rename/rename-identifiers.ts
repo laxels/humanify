@@ -148,10 +148,15 @@ export async function renameIdentifiersWithProvider(
   return out.code;
 }
 
+const DEFAULT_CONCURRENCY_LIMIT = 100;
+
 function getConcurrencyLimit(): number {
-  const raw = env("HUMANIFY_LLM_CONCURRENCY", "4");
-  const n = raw ? Number(raw) : 4;
-  if (!Number.isFinite(n) || n <= 0) return 4;
+  const raw = env(
+    "HUMANIFY_LLM_CONCURRENCY",
+    DEFAULT_CONCURRENCY_LIMIT.toString(),
+  );
+  const n = raw ? Number(raw) : DEFAULT_CONCURRENCY_LIMIT;
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_CONCURRENCY_LIMIT;
   return Math.max(1, Math.floor(n));
 }
 
