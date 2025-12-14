@@ -27,7 +27,7 @@ export async function renameIdentifiers(
   const {
     model,
     contextWindowSize,
-    maxSymbolsPerChunk = 10,
+    maxSymbolsPerChunk = 100,
     enableParallelProcessing = true,
   } = options;
 
