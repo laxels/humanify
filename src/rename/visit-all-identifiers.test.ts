@@ -34,7 +34,12 @@ test("renames a simple variable", async () => {
     async ({ dossiers }) => {
       return dossiers.map((d) => ({
         id: d.id,
-        candidates: [{ name: d.originalName === "a" ? "b" : d.originalName, confidence: 1 }],
+        candidates: [
+          {
+            name: d.originalName === "a" ? "b" : d.originalName,
+            confidence: 1,
+          },
+        ],
       }));
     },
   );
@@ -62,7 +67,12 @@ const b = 1;
     async ({ dossiers }) => {
       return dossiers.map((d) => ({
         id: d.id,
-        candidates: [{ name: d.originalName === "a" ? "b" : d.originalName, confidence: 1 }],
+        candidates: [
+          {
+            name: d.originalName === "a" ? "b" : d.originalName,
+            confidence: 1,
+          },
+        ],
       }));
     },
   );
@@ -94,7 +104,11 @@ const c = 1;
         candidates: [
           {
             name:
-              d.originalName === "a" ? "c" : d.originalName === "b" ? "d" : d.originalName,
+              d.originalName === "a"
+                ? "c"
+                : d.originalName === "b"
+                  ? "d"
+                  : d.originalName,
             confidence: 1,
           },
         ],
@@ -132,7 +146,10 @@ const c = 1;
         if (d.originalName === "a" && d.declaration.includes("= 2")) {
           return { id: d.id, candidates: [{ name: "d", confidence: 1 }] };
         }
-        return { id: d.id, candidates: [{ name: d.originalName, confidence: 1 }] };
+        return {
+          id: d.id,
+          candidates: [{ name: d.originalName, confidence: 1 }],
+        };
       });
     },
   );
@@ -188,9 +205,14 @@ e.b;
     { contextWindowSize: 800 },
     async ({ dossiers }) => {
       return dossiers.map((d) => {
-        if (d.originalName === "c") return { id: d.id, candidates: [{ name: "d", confidence: 1 }] };
-        if (d.originalName === "a") return { id: d.id, candidates: [{ name: "e", confidence: 1 }] };
-        return { id: d.id, candidates: [{ name: d.originalName, confidence: 1 }] };
+        if (d.originalName === "c")
+          return { id: d.id, candidates: [{ name: "d", confidence: 1 }] };
+        if (d.originalName === "a")
+          return { id: d.id, candidates: [{ name: "e", confidence: 1 }] };
+        return {
+          id: d.id,
+          candidates: [{ name: d.originalName, confidence: 1 }],
+        };
       });
     },
   );
@@ -221,7 +243,12 @@ obj.a;
     async ({ dossiers }) => {
       return dossiers.map((d) => ({
         id: d.id,
-        candidates: [{ name: d.originalName === "a" ? "userId" : d.originalName, confidence: 1 }],
+        candidates: [
+          {
+            name: d.originalName === "a" ? "userId" : d.originalName,
+            confidence: 1,
+          },
+        ],
       }));
     },
   );
@@ -252,7 +279,12 @@ userId;
     async ({ dossiers }) => {
       return dossiers.map((d) => ({
         id: d.id,
-        candidates: [{ name: d.originalName === "a" ? "userId" : d.originalName, confidence: 1 }],
+        candidates: [
+          {
+            name: d.originalName === "a" ? "userId" : d.originalName,
+            confidence: 1,
+          },
+        ],
       }));
     },
   );
@@ -370,7 +402,12 @@ function foo() {
     async ({ dossiers }) => {
       return dossiers.map((d) => ({
         id: d.id,
-        candidates: [{ name: d.originalName === "foo" ? "foobar" : d.originalName, confidence: 1 }],
+        candidates: [
+          {
+            name: d.originalName === "foo" ? "foobar" : d.originalName,
+            confidence: 1,
+          },
+        ],
       }));
     },
   );

@@ -1,6 +1,6 @@
 import type { NodePath } from "@babel/core";
-import * as t from "@babel/types";
 import type { Identifier, Node } from "@babel/types";
+import * as t from "@babel/types";
 import type { RenameSymbol, SymbolDossier } from "./types";
 
 export function buildSymbolDossier(
@@ -32,7 +32,11 @@ export function buildSymbolDossier(
     const parent = ref.parentPath;
 
     // Member access: x.foo
-    if (parent && (parent.isMemberExpression() || (parent as any).isOptionalMemberExpression?.())) {
+    if (
+      parent &&
+      (parent.isMemberExpression() ||
+        (parent as any).isOptionalMemberExpression?.())
+    ) {
       if ((ref as any).key === "object") {
         const prop = (parent.node as any).property;
         const computed = (parent.node as any).computed === true;
@@ -51,7 +55,11 @@ export function buildSymbolDossier(
     }
 
     // Called as a function: x(...)
-    if (parent && (parent.isCallExpression() || (parent as any).isOptionalCallExpression?.())) {
+    if (
+      parent &&
+      (parent.isCallExpression() ||
+        (parent as any).isOptionalCallExpression?.())
+    ) {
       if ((ref as any).key === "callee") {
         callCount += 1;
         const argc = (parent.node as any).arguments?.length ?? 0;
@@ -70,7 +78,7 @@ export function buildSymbolDossier(
     }
 
     // Constructed: new X(...)
-    if (parent && parent.isNewExpression()) {
+    if (parent?.isNewExpression()) {
       if ((ref as any).key === "callee") {
         newCount += 1;
         const argc = (parent.node as any).arguments?.length ?? 0;
@@ -80,28 +88,32 @@ export function buildSymbolDossier(
     }
 
     // Awaited: await x
-    if (parent && parent.isAwaitExpression()) {
+    if (parent?.isAwaitExpression()) {
       awaitedCount += 1;
       continue;
     }
 
     // Binary ops: x === 0, x + y, x instanceof Foo, ...
-    if (parent && parent.isBinaryExpression()) {
+    if (parent?.isBinaryExpression()) {
       const op = parent.node.operator;
       binaryOps.set(op, (binaryOps.get(op) ?? 0) + 1);
 
       const other =
-        (ref as any).key === "left" ? (parent.node as any).right : (parent.node as any).left;
+        (ref as any).key === "left"
+          ? (parent.node as any).right
+          : (parent.node as any).left;
 
       const lit = literalToString(other);
       if (lit && isComparisonOperator(op)) {
         comparedToLiterals.set(lit, (comparedToLiterals.get(lit) ?? 0) + 1);
       }
-      continue;
     }
   }
 
-  const declaration = truncate(getDeclarationContext(symbol.bindingPath), maxDeclarationChars);
+  const declaration = truncate(
+    getDeclarationContext(symbol.bindingPath),
+    maxDeclarationChars,
+  );
 
   const typeHints = inferTypeHints({
     kind: symbol.kind,
@@ -180,7 +192,9 @@ export function formatSymbolDossier(d: SymbolDossier): string {
   }
 
   if (d.binaryOps.length > 0) {
-    lines.push(`  ops: ${d.binaryOps.map((o) => `${o.op}×${o.count}`).join(", ")}`);
+    lines.push(
+      `  ops: ${d.binaryOps.map((o) => `${o.op}×${o.count}`).join(", ")}`,
+    );
   }
 
   if (d.comparedToLiterals.length > 0) {
@@ -204,13 +218,18 @@ function getDeclarationContext(path: NodePath<Identifier>): string {
   if (stmt) return stmt.toString();
 
   // For parameters/pattern bindings, fall back to the closest function/class/program.
-  const unit = path.findParent((p) => p.isFunction() || p.isClass() || p.isProgram());
+  const unit = path.findParent(
+    (p) => p.isFunction() || p.isClass() || p.isProgram(),
+  );
   if (unit) return unit.toString();
 
   return path.toString();
 }
 
-function topEntries(map: Map<string, number>, max: number): Array<{ name: string; count: number }> {
+function topEntries(
+  map: Map<string, number>,
+  max: number,
+): Array<{ name: string; count: number }> {
   return Array.from(map.entries())
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, max)
@@ -248,7 +267,16 @@ function calleeToDisplayName(callee: any): string {
 }
 
 function isComparisonOperator(op: string): boolean {
-  return op === "==" || op === "!=" || op === "===" || op === "!==" || op === "<" || op === "<=" || op === ">" || op === ">=";
+  return (
+    op === "==" ||
+    op === "!=" ||
+    op === "===" ||
+    op === "!==" ||
+    op === "<" ||
+    op === "<=" ||
+    op === ">" ||
+    op === ">="
+  );
 }
 
 function literalToString(node: any): string | undefined {
@@ -271,21 +299,48 @@ function inferTypeHints(input: {
   const hints: string[] = [];
 
   if (input.newCount > 0) hints.push("constructor/class-like");
-  if (input.callCount > 0 && input.newCount === 0) hints.push("callable/function-like");
+  if (input.callCount > 0 && input.newCount === 0)
+    hints.push("callable/function-like");
   if (input.awaitedCount > 0) hints.push("promise-like/awaited");
 
   const m = new Set(input.memberAccesses);
 
-  const arrayish = [".map", ".filter", ".reduce", ".forEach", ".push", ".pop", ".slice", ".splice", ".concat"];
+  const arrayish = [
+    ".map",
+    ".filter",
+    ".reduce",
+    ".forEach",
+    ".push",
+    ".pop",
+    ".slice",
+    ".splice",
+    ".concat",
+  ];
   if (arrayish.some((x) => m.has(x))) hints.push("array-like");
 
-  const stringish = [".substring", ".substr", ".slice", ".split", ".toLowerCase", ".toUpperCase", ".charCodeAt", ".includes", ".startsWith", ".endsWith", ".replace"];
+  const stringish = [
+    ".substring",
+    ".substr",
+    ".slice",
+    ".split",
+    ".toLowerCase",
+    ".toUpperCase",
+    ".charCodeAt",
+    ".includes",
+    ".startsWith",
+    ".endsWith",
+    ".replace",
+  ];
   if (stringish.some((x) => m.has(x))) hints.push("string-like");
 
   const promiseish = [".then", ".catch", ".finally"];
   if (promiseish.some((x) => m.has(x))) hints.push("promise-like");
 
-  const eventish = [".addEventListener", ".removeEventListener", ".dispatchEvent"];
+  const eventish = [
+    ".addEventListener",
+    ".removeEventListener",
+    ".dispatchEvent",
+  ];
   if (eventish.some((x) => m.has(x))) hints.push("event-target-like");
 
   return hints;

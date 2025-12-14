@@ -1,13 +1,15 @@
 import { type NodePath, parseAsync } from "@babel/core";
 import * as babelTraverse from "@babel/traverse";
-import * as t from "@babel/types";
 import type { Identifier, Node } from "@babel/types";
+import * as t from "@babel/types";
 import { verbose } from "../verbose";
 import type { NamingUnit, RenameSymbol, ScopeMeta, SymbolKind } from "./types";
 
 const traverse = (
-  typeof (babelTraverse as unknown as { default?: unknown }).default === "function"
-    ? (babelTraverse as unknown as { default: typeof babelTraverse.default }).default
+  typeof (babelTraverse as unknown as { default?: unknown }).default ===
+  "function"
+    ? (babelTraverse as unknown as { default: typeof babelTraverse.default })
+        .default
     : (
         babelTraverse as unknown as {
           default: { default: typeof babelTraverse.default };
@@ -195,7 +197,8 @@ export async function analyzeCodeForRenaming(
 
     const scopeId = getScopeId(bindingPath.scope);
 
-    const refCount = (binding?.referencePaths?.length as number | undefined) ?? 0;
+    const refCount =
+      (binding?.referencePaths?.length as number | undefined) ?? 0;
     const writeCount =
       (binding?.constantViolations?.length as number | undefined) ?? 0;
 
@@ -220,7 +223,10 @@ export async function analyzeCodeForRenaming(
     symbols.push(symbol);
 
     if (!unitsById.has(unitId)) {
-      const snippet = truncate(unitPath.toString(), Math.max(200, contextWindowSize));
+      const snippet = truncate(
+        unitPath.toString(),
+        Math.max(200, contextWindowSize),
+      );
       unitsById.set(unitId, {
         id: unitId,
         kind: unitKind,
@@ -247,7 +253,13 @@ export async function analyzeCodeForRenaming(
     });
   }
 
-  return { ast: ast as unknown as Node, symbols, units, scopeMetaById, unsafeScopeIds };
+  return {
+    ast: ast as unknown as Node,
+    symbols,
+    units,
+    scopeMetaById,
+    unsafeScopeIds,
+  };
 }
 
 function inferSymbolKind(binding: any): SymbolKind {
@@ -255,7 +267,8 @@ function inferSymbolKind(binding: any): SymbolKind {
 
   const p = binding.path;
 
-  if (p?.isFunctionDeclaration?.() || p?.isFunctionExpression?.()) return "function";
+  if (p?.isFunctionDeclaration?.() || p?.isFunctionExpression?.())
+    return "function";
   if (p?.isClassDeclaration?.() || p?.isClassExpression?.()) return "class";
   if (p?.isCatchClause?.()) return "catch";
 
@@ -293,7 +306,8 @@ function findNamingUnitPath(path: NodePath<Identifier>): NodePath<Node> {
 
 function inferUnitKind(unitPath: NodePath<Node>): NamingUnit["kind"] {
   if (unitPath.isProgram()) return "program";
-  if (unitPath.isClassDeclaration() || unitPath.isClassExpression()) return "class";
+  if (unitPath.isClassDeclaration() || unitPath.isClassExpression())
+    return "class";
   return "function";
 }
 
@@ -321,7 +335,10 @@ function getUnitDisplayName(unitPath: NodePath<Node>): string | undefined {
     return undefined;
   }
 
-  if ((unitPath as any).isObjectMethod?.() || (unitPath as any).isClassMethod?.()) {
+  if (
+    (unitPath as any).isObjectMethod?.() ||
+    (unitPath as any).isClassMethod?.()
+  ) {
     const key = (unitPath.node as any).key;
     if (t.isIdentifier(key)) return key.name;
     if (t.isStringLiteral(key)) return key.value;

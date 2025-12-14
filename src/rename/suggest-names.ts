@@ -109,18 +109,17 @@ export async function suggestNamesWithAnthropic(args: {
   for (const s of response.symbols ?? []) {
     if (!requestedIds.has(s.id)) continue;
 
-    const candidates =
-      (s.candidates ?? [])
-        .filter((c) => typeof c.name === "string" && c.name.trim().length > 0)
-        .map((c) => ({
-          name: c.name,
-          confidence:
-            typeof c.confidence === "number" && Number.isFinite(c.confidence)
-              ? Math.max(0, Math.min(1, c.confidence))
-              : 0,
-          rationale: typeof c.rationale === "string" ? c.rationale : undefined,
-        }))
-        .slice(0, maxCandidates);
+    const candidates = (s.candidates ?? [])
+      .filter((c) => typeof c.name === "string" && c.name.trim().length > 0)
+      .map((c) => ({
+        name: c.name,
+        confidence:
+          typeof c.confidence === "number" && Number.isFinite(c.confidence)
+            ? Math.max(0, Math.min(1, c.confidence))
+            : 0,
+        rationale: typeof c.rationale === "string" ? c.rationale : undefined,
+      }))
+      .slice(0, maxCandidates);
 
     if (candidates.length === 0) continue;
 
@@ -133,7 +132,9 @@ export async function suggestNamesWithAnthropic(args: {
     if (out.some((x) => x.id === d.id)) continue;
     out.push({
       id: d.id,
-      candidates: [{ name: d.originalName, confidence: 0.0, rationale: "fallback" }],
+      candidates: [
+        { name: d.originalName, confidence: 0.0, rationale: "fallback" },
+      ],
     });
   }
 

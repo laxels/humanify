@@ -1,10 +1,10 @@
 import { parseAsync, transformFromAstAsync } from "@babel/core";
 import { env } from "../env";
-import { mapLimit } from "../promise-utils";
 import { showProgress } from "../progress";
+import { mapLimit } from "../promise-utils";
 import { verbose } from "../verbose";
-import { applyRenamesToAst } from "./apply-renames";
 import { analyzeCodeForRenaming } from "./analyze";
+import { applyRenamesToAst } from "./apply-renames";
 import { solveRenamePlan } from "./constraints";
 import { buildSymbolDossier } from "./dossier";
 import { suggestNamesWithAnthropic } from "./suggest-names";
@@ -62,12 +62,15 @@ export async function renameIdentifiersWithProvider(
   }
 
   // Create LLM jobs grouped by naming unit, excluding symbols declared in unsafe scopes.
-  const jobs: Array<{ unit: NamingUnitSummary; dossiers: SymbolDossier[] }> = [];
+  const jobs: Array<{ unit: NamingUnitSummary; dossiers: SymbolDossier[] }> =
+    [];
 
   let totalSymbolsToSuggest = 0;
 
   for (const unit of analysis.units) {
-    const renameable = unit.symbols.filter((s) => !analysis.unsafeScopeIds.has(s.scopeId));
+    const renameable = unit.symbols.filter(
+      (s) => !analysis.unsafeScopeIds.has(s.scopeId),
+    );
     if (renameable.length === 0) continue;
 
     totalSymbolsToSuggest += renameable.length;
@@ -178,9 +181,15 @@ function mergeCandidates(
   );
 }
 
-function chunkDossiers(dossiers: SymbolDossier[], contextWindowSize: number): SymbolDossier[][] {
+function chunkDossiers(
+  dossiers: SymbolDossier[],
+  contextWindowSize: number,
+): SymbolDossier[][] {
   // Keep chunks bounded. We use a simple heuristic on count and rough size.
-  const maxSymbols = Math.max(8, Math.min(30, Math.floor(contextWindowSize / 50) + 10));
+  const maxSymbols = Math.max(
+    8,
+    Math.min(30, Math.floor(contextWindowSize / 50) + 10),
+  );
 
   const chunks: SymbolDossier[][] = [];
   for (let i = 0; i < dossiers.length; i += maxSymbols) {

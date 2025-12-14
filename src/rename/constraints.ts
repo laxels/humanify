@@ -1,5 +1,10 @@
 import { toIdentifier } from "@babel/types";
-import type { CandidateName, NamingStyle, RenameSymbol, ScopeMeta } from "./types";
+import type {
+  CandidateName,
+  NamingStyle,
+  RenameSymbol,
+  ScopeMeta,
+} from "./types";
 
 const RESERVED_WORDS = new Set([
   "break",
@@ -56,7 +61,8 @@ export function solveRenamePlan(args: {
   scopeMetaById: Map<string, ScopeMeta>;
   unsafeScopeIds: Set<string>;
 }): Map<string, string> {
-  const { symbols, suggestionsBySymbolId, scopeMetaById, unsafeScopeIds } = args;
+  const { symbols, suggestionsBySymbolId, scopeMetaById, unsafeScopeIds } =
+    args;
 
   const symbolsByScope = new Map<string, RenameSymbol[]>();
   for (const s of symbols) {
@@ -117,12 +123,15 @@ export function solveRenamePlan(args: {
       const deduped = new Map<string, number>();
       for (const c of processed) {
         const prev = deduped.get(c.name);
-        if (prev == null || c.confidence > prev) deduped.set(c.name, c.confidence);
+        if (prev == null || c.confidence > prev)
+          deduped.set(c.name, c.confidence);
       }
 
       const list = Array.from(deduped.entries())
         .map(([name, confidence]) => ({ name, confidence }))
-        .sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
+        .sort(
+          (a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name),
+        );
 
       candidatesBySymbol.set(s.id, list);
 
@@ -228,13 +237,18 @@ function normalizeCandidates(
   return out;
 }
 
-function inferNamingStyle(symbol: RenameSymbol, candidates: CandidateName[]): NamingStyle {
+function inferNamingStyle(
+  symbol: RenameSymbol,
+  candidates: CandidateName[],
+): NamingStyle {
   if (symbol.kind === "class") return "pascalCase";
 
   if (symbol.kind === "function") {
     // If used with `new`, treat as constructor-like.
     const refs: any[] = symbol.binding?.referencePaths ?? [];
-    const constructed = refs.some((r) => r?.parentPath?.isNewExpression?.() && r.key === "callee");
+    const constructed = refs.some(
+      (r) => r?.parentPath?.isNewExpression?.() && r.key === "callee",
+    );
     return constructed ? "pascalCase" : "camelCase";
   }
 
@@ -315,7 +329,10 @@ function splitIntoWords(name: string): string[] {
   return words;
 }
 
-function splitLeadingUnderscores(name: string): { prefix: string; core: string } {
+function splitLeadingUnderscores(name: string): {
+  prefix: string;
+  core: string;
+} {
   const match = name.match(/^_+/);
   const prefix = match?.[0] ?? "";
   const core = name.slice(prefix.length);
@@ -327,7 +344,6 @@ function ensureNotReserved(name: string): string {
   return `_${name}`;
 }
 
-
 function makeUniqueInScopeChain(
   base: string,
   scopeId: string,
@@ -337,7 +353,15 @@ function makeUniqueInScopeChain(
 ): string {
   let name = ensureNotReserved(base);
 
-  while (isTakenInScopeChain(name, scopeId, allocatedByScope, scopeMetaById, allocatedHere)) {
+  while (
+    isTakenInScopeChain(
+      name,
+      scopeId,
+      allocatedByScope,
+      scopeMetaById,
+      allocatedHere,
+    )
+  ) {
     name = `_${name}`;
   }
 
