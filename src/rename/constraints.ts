@@ -291,7 +291,7 @@ function applyStyle(name: string, style: NamingStyle): string {
   if (style === "camelCase") {
     const [first, ...rest] = words;
     return [
-      first.toLowerCase(),
+      first!.toLowerCase(),
       ...rest.map((w) => capitalize(w.toLowerCase())),
     ].join("");
   }

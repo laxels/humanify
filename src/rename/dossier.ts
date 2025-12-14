@@ -132,7 +132,7 @@ export function buildSymbolDossier(
     referenceCount: referencePaths.length,
     writeCount: constantViolations.length,
 
-    memberAccesses: topEntries(memberAccesses, maxEntriesPerSection),
+    memberAccesses: topEntries(memberAccesses, maxEntriesPerSection, "name"),
 
     callInfo: {
       callCount,
@@ -142,11 +142,11 @@ export function buildSymbolDossier(
 
     newCount,
 
-    passedTo: topEntries(passedTo, maxEntriesPerSection),
+    passedTo: topEntries(passedTo, maxEntriesPerSection, "callee"),
 
-    binaryOps: topEntries(binaryOps, maxEntriesPerSection),
+    binaryOps: topEntries(binaryOps, maxEntriesPerSection, "op"),
 
-    comparedToLiterals: topEntries(comparedToLiterals, maxEntriesPerSection),
+    comparedToLiterals: topEntries(comparedToLiterals, maxEntriesPerSection, "literal"),
 
     typeHints,
   };
@@ -226,14 +226,15 @@ function getDeclarationContext(path: NodePath<Identifier>): string {
   return path.toString();
 }
 
-function topEntries(
+function topEntries<K extends string>(
   map: Map<string, number>,
   max: number,
-): Array<{ name: string; count: number }> {
+  keyName: K,
+): Array<{ [P in K]: string } & { count: number }> {
   return Array.from(map.entries())
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, max)
-    .map(([name, count]) => ({ name, count }));
+    .map(([key, count]) => ({ [keyName]: key, count }) as { [P in K]: string } & { count: number });
 }
 
 function topNumberEntries(
