@@ -44,7 +44,9 @@ async function main(): Promise<void> {
   } else {
     await $`git worktree add -b ${branchName} ${dirPath}`;
   }
-  await $`cp -a ${CP_ITEMS} ${dirPath}`;
+  for (const item of CP_ITEMS) {
+    await $`cp -a ${item} ${dirPath}`.nothrow();
+  }
   $.cwd(dirPath);
   await $`direnv allow`;
   await $`bun install`;
