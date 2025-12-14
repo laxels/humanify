@@ -37,7 +37,7 @@ export async function renameIdentifiers(
   const {
     model,
     contextWindowSize,
-    maxConcurrency = 5,
+    maxConcurrency = 100,
     maxBatchSize = 20,
   } = options;
 

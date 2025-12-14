@@ -164,7 +164,7 @@ export async function getNamingSuggestionsForBatch(
 export async function getNamingSuggestionsParallel(
   batches: NamingBatch[],
   options: LLMNamingOptions = {},
-  maxConcurrency: number = 5,
+  maxConcurrency: number = 100,
   onProgress?: (completed: number, total: number) => void,
 ): Promise<SymbolNamingResult[]> {
   const results: SymbolNamingResult[] = [];
