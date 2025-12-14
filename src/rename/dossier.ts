@@ -260,7 +260,7 @@ function classifyReference(ref: NodePath<t.Identifier>, agg: UsageAgg) {
     const callParent = parent.parentPath;
     if (
       (callParent as any)?.isOptionalCallExpression?.() &&
-      (callParent.node as any).callee === parent.node
+      (callParent!.node as any).callee === parent.node
     ) {
       if (propName) increment(agg.methodCalls, propName);
     }
