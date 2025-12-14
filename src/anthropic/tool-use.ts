@@ -8,8 +8,8 @@ const client = new Anthropic({
   timeout: 1000 * 60 * 60, // 1 hour
 });
 
-export const DEFAULT_MODEL = "claude-opus-4-5";
-const DEFAULT_MAX_TOKENS = 64000; // Highest possible value for Opus 4.5
+export const DEFAULT_MODEL = "claude-sonnet-4-5";
+const DEFAULT_MAX_TOKENS = 64000; // Highest possible value for Sonnet 4.5
 const DEFAULT_THINKING_BUDGET = 50000;
 
 type ToolInputSchema = Anthropic.Messages.Tool["input_schema"];
