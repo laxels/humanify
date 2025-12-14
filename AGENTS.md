@@ -51,14 +51,29 @@ The pipeline is intentionally fixed and lives in `src/pipeline/unminify.ts`:
 
 ### Identifier Renaming
 
-The renaming logic in `src/rename/visit-all-identifiers.ts`:
+The renaming logic now follows an **AST + scope graph + per-symbol dossiers + global constraint solver** design:
 
-* Parses code to AST with Babel
-* Finds all binding identifiers (variable/function/class declarations)
-* Sorts by enclosing block size (largest first) so outer scopes get renamed before inner
-* For each identifier, extracts surrounding code context (configurable window size) and calls Claude via tool use
-* Uses Babel's `scope.rename()` to safely rename all references
-* Handles name collisions by prefixing with underscores
+* **Analyze** (`src/rename/symbol-analysis.ts`)
+  * Parse to AST (Babel)
+  * Build a stable **symbol table** (each binding gets a stable symbolId)
+  * Build scope "chunks" (Program / Function / Class) for batching
+  * Detect **unsafe scopes** (e.g., global `eval`, `with`, string-eval timers) and conservatively skip renames there
+* **Dossier extraction** (`src/rename/symbol-dossier.ts`)
+  * For each symbol, produce a compact "dossier":
+    * declaration kind/snippet
+    * usage summary (call sites, member accesses, comparisons, etc.)
+    * lightweight type-ish hints (array-like, promise-like, etc.)
+* **Batched LLM calls per scope** (`src/rename/rename-identifiers.ts`)
+  * One call per scope-chunk (many symbols at once)
+  * Parallelized with a concurrency limit
+  * Requests **top‑k candidates** + confidence for each symbolId
+* **Global reconciliation / constraint solving** (`src/rename/constraint-solver.ts`)
+  * Picks final names per lexical scope to **avoid collisions**
+  * Enforces naming conventions (camelCase / PascalCase / conservative UPPER_SNAKE for obvious top-level primitive constants)
+* **Safe application** (`src/rename/apply-renames.ts` + `src/rename/ast-fixes.ts`)
+  * Two‑phase rename (temp → final) to avoid cycles/collisions
+  * Fix object shorthand semantics when renaming (`{a}` → `{a: userId}`, `{a} = obj` → `{a: userId} = obj`)
+  * Preserve named-export interfaces across files (`export function a` → `function betterName; export { betterName as a }`)
 
 ### Anthropic Integration
 
