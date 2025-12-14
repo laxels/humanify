@@ -7,7 +7,10 @@ export function buildSymbolDossier(
   symbol: SymbolInfo,
   { contextWindowSize }: { contextWindowSize: number },
 ): SymbolDossier {
-  const declarationSnippet = truncate(getDeclarationSnippet(symbol), Math.min(400, contextWindowSize));
+  const declarationSnippet = truncate(
+    getDeclarationSnippet(symbol),
+    Math.min(400, contextWindowSize),
+  );
 
   const usageSummary = buildUsageSummary(symbol);
   const typeHints = buildTypeHints(symbol, usageSummary);
@@ -32,7 +35,10 @@ export function buildSymbolDossier(
 function getDeclarationSnippet(symbol: SymbolInfo): string {
   const bindingPath = symbol.binding.path as unknown as NodePath;
   const stmt = bindingPath.getStatementParent?.();
-  const raw = stmt?.toString?.() ?? bindingPath.toString?.() ?? symbol.bindingIdentifierPath.toString();
+  const raw =
+    stmt?.toString?.() ??
+    bindingPath.toString?.() ??
+    symbol.bindingIdentifierPath.toString();
   return raw ?? "";
 }
 
@@ -175,7 +181,6 @@ function buildUsageSummary(symbol: SymbolInfo): SymbolUsageSummary {
 
       // default: foo.bar => memberReads
       memberReads.add(propertyName);
-      continue;
     }
   }
 
@@ -196,11 +201,15 @@ function buildUsageSummary(symbol: SymbolInfo): SymbolUsageSummary {
   };
 }
 
-function buildTypeHints(symbol: SymbolInfo, usage: SymbolUsageSummary): string[] {
+function buildTypeHints(
+  symbol: SymbolInfo,
+  usage: SymbolUsageSummary,
+): string[] {
   const hints = new Set<string>();
 
   if (usage.isConstructed) hints.add("constructed with `new`");
-  if (usage.isCalled && !usage.isConstructed) hints.add("called like a function");
+  if (usage.isCalled && !usage.isConstructed)
+    hints.add("called like a function");
   if (usage.isAwaited) hints.add("awaited (promise-like)");
 
   const arrayMethods = new Set([
@@ -227,7 +236,10 @@ function buildTypeHints(symbol: SymbolInfo, usage: SymbolUsageSummary): string[]
   }
 
   const promiseMethods = new Set(["then", "catch", "finally"]);
-  if (usage.calledMethods.some((m) => promiseMethods.has(m)) || usage.isAwaited) {
+  if (
+    usage.calledMethods.some((m) => promiseMethods.has(m)) ||
+    usage.isAwaited
+  ) {
     hints.add("promise-like");
   }
 
@@ -235,7 +247,10 @@ function buildTypeHints(symbol: SymbolInfo, usage: SymbolUsageSummary): string[]
     hints.add("has `.length` (string/array-like)");
   }
 
-  if (usage.comparedWith.includes("null") || usage.comparedWith.includes("undefined")) {
+  if (
+    usage.comparedWith.includes("null") ||
+    usage.comparedWith.includes("undefined")
+  ) {
     hints.add("nullable-ish (compared with null/undefined)");
   }
 
@@ -247,7 +262,10 @@ function buildTypeHints(symbol: SymbolInfo, usage: SymbolUsageSummary): string[]
   return [...hints].sort();
 }
 
-function collectChainedCalledMethods(callPath: NodePath, calledMethods: Set<string>) {
+function collectChainedCalledMethods(
+  callPath: NodePath,
+  calledMethods: Set<string>,
+) {
   // Walk chains like:
   //   <call>.filter(...) -> adds "filter"
   //   <call>.filter(...).map(...) -> adds "map" etc.

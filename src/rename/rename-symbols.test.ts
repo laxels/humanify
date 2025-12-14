@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { renameSymbols } from "./rename-symbols";
-import type { SuggestNames } from "./types";
 import { analyzeCode } from "./symbol-analysis";
 import { buildSymbolDossier } from "./symbol-dossier";
+import type { SuggestNames } from "./types";
 
 function suggestNoOp(): SuggestNames {
   return async ({ symbols }) =>
@@ -271,8 +271,10 @@ const obj = { a };
 
   expect(result).toBe(
     `
-const value = 1;
-export { value as a };
+let userId = 1;
+const obj = {
+  a: userId
+};
 `.trim(),
   );
 });
@@ -355,9 +357,7 @@ export { a };
   expect(result).toBe(
     `
 const value = 1;
-export {
-  value as a
-};
+export { value as a };
 `.trim(),
   );
 });

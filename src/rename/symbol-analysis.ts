@@ -1,8 +1,18 @@
 import { parseAsync } from "@babel/core";
-import * as t from "@babel/types";
 import type { Identifier, Node } from "@babel/types";
-import { traverse, type Binding, type NodePath, type Scope } from "../babel-traverse";
-import type { DeclarationKind, NameStyle, ScopeChunkId, SymbolId } from "./types";
+import * as t from "@babel/types";
+import {
+  type Binding,
+  type NodePath,
+  type Scope,
+  traverse,
+} from "../babel-traverse";
+import type {
+  DeclarationKind,
+  NameStyle,
+  ScopeChunkId,
+  SymbolId,
+} from "./types";
 
 export type ScopeChunk = {
   id: ScopeChunkId;
@@ -101,7 +111,8 @@ export async function analyzeCode(code: string): Promise<AnalyzedCode> {
       const declarationKind = inferDeclarationKind(binding);
       const isImported = isImportBinding(binding);
       const isExported =
-        exportedBindings.has(binding) || exportedBindingIdentifiers.has(binding.identifier);
+        exportedBindings.has(binding) ||
+        exportedBindingIdentifiers.has(binding.identifier);
 
       const isUnsafeToRename = unsafeScopeUids.has(declaringScopeUid);
       const isConstant = Boolean(binding.constant);
@@ -158,7 +169,10 @@ export async function analyzeCode(code: string): Promise<AnalyzedCode> {
   };
 }
 
-function ensureChunk(scope: Scope, chunksByUid: Map<number, ScopeChunk>): ScopeChunk {
+function ensureChunk(
+  scope: Scope,
+  chunksByUid: Map<number, ScopeChunk>,
+): ScopeChunk {
   const existing = chunksByUid.get(scope.uid);
   if (existing) return existing;
 
@@ -189,7 +203,10 @@ function isChunkScopePath(path: NodePath<Node>): boolean {
 
 function getChunkScope(scope: Scope): Scope {
   let current: Scope = scope;
-  while (current.parent && !isChunkScopePath(current.path as unknown as NodePath<Node>)) {
+  while (
+    current.parent &&
+    !isChunkScopePath(current.path as unknown as NodePath<Node>)
+  ) {
     current = current.parent;
   }
   return current;
@@ -212,7 +229,10 @@ function inferDeclarationKind(binding: Binding): DeclarationKind {
   if (binding.kind === "param") return "param";
   if (binding.kind === "module") return "import";
 
-  if (binding.path.isFunctionDeclaration() || binding.path.isFunctionExpression()) {
+  if (
+    binding.path.isFunctionDeclaration() ||
+    binding.path.isFunctionExpression()
+  ) {
     return "function";
   }
   if (binding.path.isClassDeclaration() || binding.path.isClassExpression()) {
@@ -241,7 +261,8 @@ function isPrimitiveConstLiteral(binding: Binding): boolean {
   if (!binding.path.isVariableDeclarator()) return false;
 
   const decl = binding.path.parentPath;
-  if (!decl?.isVariableDeclaration() || decl.node.kind !== "const") return false;
+  if (!decl?.isVariableDeclaration() || decl.node.kind !== "const")
+    return false;
 
   const init = binding.path.node.init;
   if (!init) return false;
@@ -311,7 +332,10 @@ function isDirectlyExportedDeclaration(binding: Binding): boolean {
   }
 
   // `export function foo() {}` / `export class Foo {}`
-  if (binding.path.isFunctionDeclaration() || binding.path.isClassDeclaration()) {
+  if (
+    binding.path.isFunctionDeclaration() ||
+    binding.path.isClassDeclaration()
+  ) {
     const exportDecl = binding.path.parentPath;
 
     if (
@@ -406,7 +430,11 @@ function analyzeExports(ast: Node): {
     },
   });
 
-  return { exportDeclarationRecords, exportedBindingIdentifiers, exportedBindings };
+  return {
+    exportDeclarationRecords,
+    exportedBindingIdentifiers,
+    exportedBindings,
+  };
 }
 
 function findUnsafeScopeUids(ast: Node): Set<number> {
@@ -442,7 +470,8 @@ function findUnsafeScopeUids(ast: Node): Set<number> {
       ) {
         const arg0 = path.node.arguments[0];
         if (t.isStringLiteral(arg0)) {
-          const isLocallyBound = path.scope.getBinding(path.node.callee.name) != null;
+          const isLocallyBound =
+            path.scope.getBinding(path.node.callee.name) != null;
           if (!isLocallyBound) {
             markScopeAndParents(path.scope);
           }

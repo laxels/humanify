@@ -13,8 +13,12 @@ test("normalizeCandidateName enforces PascalCase (preserving leading underscores
 });
 
 test("normalizeCandidateName enforces UPPER_SNAKE", () => {
-  expect(normalizeCandidateName("maxRetries", "upper_snake")).toBe("MAX_RETRIES");
-  expect(normalizeCandidateName("max retries", "upper_snake")).toBe("MAX_RETRIES");
+  expect(normalizeCandidateName("maxRetries", "upper_snake")).toBe(
+    "MAX_RETRIES",
+  );
+  expect(normalizeCandidateName("max retries", "upper_snake")).toBe(
+    "MAX_RETRIES",
+  );
 });
 
 test("solver chooses max-confidence combination under collisions", () => {

@@ -290,10 +290,7 @@ function solveHeuristic(
 
     const finalName =
       bestName ??
-      makeUnique(
-        normalizeCandidateName(s.originalName, s.nameStyle),
-        used,
-      );
+      makeUnique(normalizeCandidateName(s.originalName, s.nameStyle), used);
 
     used.add(finalName);
     out.set(s.symbolId, finalName);

@@ -1,11 +1,22 @@
 import { parseAsync, transformFromAstAsync } from "@babel/core";
 import type { Node } from "@babel/types";
-import { detachModuleInterfaceNames, expandRenamedObjectShorthands, preserveExportedDeclarations, scopeIdFromUid } from "./ast-fixes";
 import { applyRenamePlan } from "./apply-renames";
-import { solveSymbolNames, type SymbolForNaming } from "./constraint-solver";
+import {
+  detachModuleInterfaceNames,
+  expandRenamedObjectShorthands,
+  preserveExportedDeclarations,
+  scopeIdFromUid,
+} from "./ast-fixes";
+import { type SymbolForNaming, solveSymbolNames } from "./constraint-solver";
 import { analyzeCode } from "./symbol-analysis";
 import { buildSymbolDossier } from "./symbol-dossier";
-import type { NameCandidate, SuggestNames, SymbolDossier, SymbolId, SymbolNameSuggestion } from "./types";
+import type {
+  NameCandidate,
+  SuggestNames,
+  SymbolDossier,
+  SymbolId,
+  SymbolNameSuggestion,
+} from "./types";
 
 export type RenameSymbolsOptions = {
   contextWindowSize: number;
@@ -30,8 +41,14 @@ export async function renameSymbols(
 ): Promise<string> {
   const analyzed = await analyzeCode(code);
 
-  const { ast, symbols, chunks, bindingToSymbolId, bindingIdentifierToSymbolId, exportDeclarationRecords } =
-    analyzed;
+  const {
+    ast,
+    symbols,
+    chunks,
+    bindingToSymbolId,
+    bindingIdentifierToSymbolId,
+    exportDeclarationRecords,
+  } = analyzed;
 
   const renameableSymbols = symbols.filter((s) => !s.isUnsafeToRename);
   const total = renameableSymbols.length;
@@ -190,13 +207,16 @@ async function mapWithConcurrency<T, R>(
 
   let nextIndex = 0;
 
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (true) {
-      const currentIndex = nextIndex++;
-      if (currentIndex >= items.length) break;
-      results[currentIndex] = await fn(items[currentIndex]!, currentIndex);
-    }
-  });
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      while (true) {
+        const currentIndex = nextIndex++;
+        if (currentIndex >= items.length) break;
+        results[currentIndex] = await fn(items[currentIndex]!, currentIndex);
+      }
+    },
+  );
 
   await Promise.all(workers);
   return results;

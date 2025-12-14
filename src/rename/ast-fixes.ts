@@ -1,6 +1,6 @@
-import * as t from "@babel/types";
 import type { Identifier, Node } from "@babel/types";
-import { traverse, type Binding, type NodePath } from "../babel-traverse";
+import * as t from "@babel/types";
+import { type Binding, type NodePath, traverse } from "../babel-traverse";
 import type { ExportedDeclarationRecord } from "./symbol-analysis";
 import type { ScopeId, SymbolId } from "./types";
 
@@ -103,7 +103,10 @@ export function preserveExportedDeclarations(
   ast: Node,
   records: ExportedDeclarationRecord[],
 ) {
-  const recordByNode = new WeakMap<t.ExportNamedDeclaration, ExportedDeclarationRecord>();
+  const recordByNode = new WeakMap<
+    t.ExportNamedDeclaration,
+    ExportedDeclarationRecord
+  >();
   for (const r of records) {
     recordByNode.set(r.exportNode, r);
   }
@@ -116,8 +119,12 @@ export function preserveExportedDeclarations(
       const declaration = path.node.declaration;
       if (!declaration) return;
 
-      const specifiers = record.exportedBindings.map(({ identifier, exportedName }) =>
-        t.exportSpecifier(t.identifier(identifier.name), t.identifier(exportedName)),
+      const specifiers = record.exportedBindings.map(
+        ({ identifier, exportedName }) =>
+          t.exportSpecifier(
+            t.identifier(identifier.name),
+            t.identifier(exportedName),
+          ),
       );
 
       const exportStmt = t.exportNamedDeclaration(null, specifiers, null);
