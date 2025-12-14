@@ -16,6 +16,12 @@ type NormalizedCandidate = {
   score: number;
 };
 
+// Penalty per underscore we have to prefix to make a name unique within a scope.
+// This nudges the solver to prefer a good alternative candidate (e.g. "baz")
+// over "_foo" when the score difference is small, while still preferring "_foo"
+// over falling back to the original minified name.
+const UNDERSCORE_PENALTY = 0.2;
+
 export function normalizeCandidateName(raw: string, style: NameStyle): string {
   const trimmed = raw.trim();
   const safe = toIdentifier(trimmed.length > 0 ? trimmed : "_");
@@ -60,7 +66,10 @@ export function solveSymbolNames({
       const normalized = normalizeCandidates(s, raw);
 
       // Always allow "keep original" as a fallback.
-      const originalNormalized = normalizeCandidateName(s.originalName, s.nameStyle);
+      const originalNormalized = normalizeCandidateName(
+        s.originalName,
+        s.nameStyle,
+      );
       if (!normalized.some((c) => c.name === originalNormalized)) {
         normalized.push({ name: originalNormalized, score: 0 });
       }
@@ -100,13 +109,15 @@ function normalizeCandidates(
     }
   }
 
-  const list: NormalizedCandidate[] = [...bestByName.entries()].map(([name, score]) => ({
-    name,
-    score,
-  }));
+  const list: NormalizedCandidate[] = [...bestByName.entries()].map(
+    ([name, score]) => ({
+      name,
+      score,
+    }),
+  );
 
   // Sort by score desc, then name asc for determinism.
-  list.sort((a, b) => (b.score - a.score) || a.name.localeCompare(b.name));
+  list.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
   return list;
 }
@@ -134,6 +145,7 @@ function solveExact(
   const current = new Map<SymbolId, string>();
   const used = new Set<string>(occupied);
 
+  // Upper bound pruning: assume each remaining symbol can take its best base score.
   const bestRemainingScore = ordered.map((s) => {
     const cands = candidatesBySymbol.get(s.symbolId) ?? [];
     const best = cands[0]?.score ?? 0;
@@ -159,30 +171,73 @@ function solveExact(
     if (scoreSoFar + suffixBest[idx]! <= bestScore) return;
 
     const sym = ordered[idx]!;
-    const cands = candidatesBySymbol.get(sym.symbolId) ?? [];
+    const baseCands = candidatesBySymbol.get(sym.symbolId) ?? [];
 
-    for (const cand of cands) {
-      if (used.has(cand.name)) continue;
+    // For the current used-set, compute the best unique variant per resulting name.
+    const bestByFinalName = new Map<
+      string,
+      { name: string; score: number; addedUnderscores: number }
+    >();
 
-      used.add(cand.name);
-      current.set(sym.symbolId, cand.name);
+    for (const cand of baseCands) {
+      const { name: uniqueName, addedUnderscores } = makeUniqueWithCount(
+        cand.name,
+        used,
+      );
+      const adjustedScore = cand.score - addedUnderscores * UNDERSCORE_PENALTY;
 
-      dfs(idx + 1, scoreSoFar + cand.score);
+      const prev = bestByFinalName.get(uniqueName);
+      if (
+        !prev ||
+        adjustedScore > prev.score ||
+        (adjustedScore === prev.score &&
+          addedUnderscores < prev.addedUnderscores)
+      ) {
+        bestByFinalName.set(uniqueName, {
+          name: uniqueName,
+          score: adjustedScore,
+          addedUnderscores,
+        });
+      }
+    }
+
+    const options = [...bestByFinalName.values()].sort((a, b) => {
+      // Higher adjusted score first.
+      if (a.score !== b.score) return b.score - a.score;
+      // Fewer added underscores is preferred.
+      if (a.addedUnderscores !== b.addedUnderscores) {
+        return a.addedUnderscores - b.addedUnderscores;
+      }
+      // Deterministic by name.
+      return a.name.localeCompare(b.name);
+    });
+
+    for (const opt of options) {
+      if (used.has(opt.name)) continue;
+
+      used.add(opt.name);
+      current.set(sym.symbolId, opt.name);
+
+      dfs(idx + 1, scoreSoFar + opt.score);
 
       current.delete(sym.symbolId);
-      used.delete(cand.name);
+      used.delete(opt.name);
     }
   };
 
   dfs(0, 0);
 
-  // Ensure every symbol has a name (fallback: make unique from its best candidate).
+  // Safety: ensure every symbol has a name (should always hold).
   const out = new Map<SymbolId, string>();
   const usedOut = new Set<string>(occupied);
 
   for (const s of symbols) {
     const chosen = bestAssignment.get(s.symbolId);
-    const base = chosen ?? (candidatesBySymbol.get(s.symbolId)?.[0]?.name ?? s.originalName);
+    const base =
+      chosen ??
+      candidatesBySymbol.get(s.symbolId)?.[0]?.name ??
+      normalizeCandidateName(s.originalName, s.nameStyle);
+
     const unique = makeUnique(base, usedOut);
     usedOut.add(unique);
     out.set(s.symbolId, unique);
@@ -202,91 +257,66 @@ function solveHeuristic(
     return a.symbolId.localeCompare(b.symbolId);
   });
 
-  const choiceIndex = new Map<SymbolId, number>();
-  const chosen = new Map<SymbolId, string>();
-
-  for (const s of ordered) {
-    choiceIndex.set(s.symbolId, 0);
-    const first = candidatesBySymbol.get(s.symbolId)?.[0]?.name ?? s.originalName;
-    chosen.set(s.symbolId, first);
-  }
-
-  // Iteratively resolve collisions by pushing losers to their next candidate.
-  for (let iter = 0; iter < 100; iter++) {
-    const byName = new Map<string, SymbolForNaming[]>();
-
-    for (const s of ordered) {
-      const name = chosen.get(s.symbolId) ?? s.originalName;
-      const list = byName.get(name) ?? [];
-      list.push(s);
-      byName.set(name, list);
-    }
-
-    let changed = false;
-
-    for (const [name, ss] of byName) {
-      const conflicts = ss.length > 1 || occupied.has(name);
-      if (!conflicts) continue;
-
-      // Pick winner:
-      // - If name is occupied, there is no winner; everyone must move.
-      // - Else keep the highest score/importance as winner.
-      let winners: Set<SymbolId> = new Set();
-
-      if (!occupied.has(name) && ss.length > 0) {
-        const sorted = [...ss].sort((a, b) => {
-          const aIdx = choiceIndex.get(a.symbolId) ?? 0;
-          const bIdx = choiceIndex.get(b.symbolId) ?? 0;
-          const aScore = candidatesBySymbol.get(a.symbolId)?.[aIdx]?.score ?? 0;
-          const bScore = candidatesBySymbol.get(b.symbolId)?.[bIdx]?.score ?? 0;
-          if (aScore !== bScore) return bScore - aScore;
-          if (a.importance !== b.importance) return b.importance - a.importance;
-          return a.symbolId.localeCompare(b.symbolId);
-        });
-        winners = new Set([sorted[0]!.symbolId]);
-      }
-
-      for (const s of ss) {
-        if (winners.has(s.symbolId)) continue;
-
-        const cands = candidatesBySymbol.get(s.symbolId) ?? [];
-        let idx = (choiceIndex.get(s.symbolId) ?? 0) + 1;
-        if (idx >= cands.length) idx = cands.length - 1;
-
-        if (idx !== (choiceIndex.get(s.symbolId) ?? 0)) {
-          choiceIndex.set(s.symbolId, idx);
-          chosen.set(s.symbolId, cands[idx]?.name ?? s.originalName);
-          changed = true;
-        } else if (occupied.has(name)) {
-          // Still stuck on an occupied name: force change marker to proceed to uniqueness stage.
-          changed = true;
-        }
-      }
-    }
-
-    if (!changed) break;
-  }
-
-  // Final pass: make unique deterministically.
   const out = new Map<SymbolId, string>();
   const used = new Set<string>(occupied);
 
   for (const s of ordered) {
-    const base = chosen.get(s.symbolId) ?? s.originalName;
-    const unique = makeUnique(base, used);
-    used.add(unique);
-    out.set(s.symbolId, unique);
+    const cands = candidatesBySymbol.get(s.symbolId) ?? [];
+
+    let bestName: string | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    let bestAddedUnderscores = Number.POSITIVE_INFINITY;
+
+    for (const cand of cands) {
+      const { name: uniqueName, addedUnderscores } = makeUniqueWithCount(
+        cand.name,
+        used,
+      );
+      const adjustedScore = cand.score - addedUnderscores * UNDERSCORE_PENALTY;
+
+      if (
+        adjustedScore > bestScore ||
+        (adjustedScore === bestScore &&
+          addedUnderscores < bestAddedUnderscores) ||
+        (adjustedScore === bestScore &&
+          addedUnderscores === bestAddedUnderscores &&
+          uniqueName.localeCompare(bestName ?? uniqueName) < 0)
+      ) {
+        bestScore = adjustedScore;
+        bestAddedUnderscores = addedUnderscores;
+        bestName = uniqueName;
+      }
+    }
+
+    const finalName =
+      bestName ??
+      makeUnique(
+        normalizeCandidateName(s.originalName, s.nameStyle),
+        used,
+      );
+
+    used.add(finalName);
+    out.set(s.symbolId, finalName);
   }
 
   return out;
 }
 
-function makeUnique(base: string, used: Set<string>): string {
+function makeUniqueWithCount(
+  base: string,
+  used: Set<string>,
+): { name: string; addedUnderscores: number } {
   let name = base;
+  let added = 0;
   while (used.has(name)) {
     name = `_${name}`;
+    added++;
   }
-  return name;
+  return { name, addedUnderscores: added };
+}
+
+function makeUnique(base: string, used: Set<string>): string {
+  return makeUniqueWithCount(base, used).name;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -303,10 +333,7 @@ function toUpperSnakeCase(name: string): string {
   return withUnderscores.toUpperCase();
 }
 
-function applyCaseToFirstAlpha(
-  name: string,
-  mode: "lower" | "upper",
-): string {
+function applyCaseToFirstAlpha(name: string, mode: "lower" | "upper"): string {
   // Preserve leading underscores (often used to avoid collisions/reserved words),
   // but enforce casing on the first alphabetic character.
   const chars = [...name];

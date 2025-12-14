@@ -146,6 +146,12 @@ function buildUsageSummary(symbol: SymbolInfo): SymbolUsageSummary {
         memberExprParent.get("callee") === memberExprPath
       ) {
         calledMethods.add(propertyName);
+
+        // Capture chained calls:
+        //   arr.map(cb).filter(cb)
+        // should attribute both `map` and `filter` to `arr` for better type hints.
+        collectChainedCalledMethods(memberExprParent, calledMethods);
+
         continue;
       }
 
@@ -239,6 +245,39 @@ function buildTypeHints(symbol: SymbolInfo, usage: SymbolUsageSummary): string[]
   }
 
   return [...hints].sort();
+}
+
+function collectChainedCalledMethods(callPath: NodePath, calledMethods: Set<string>) {
+  // Walk chains like:
+  //   <call>.filter(...) -> adds "filter"
+  //   <call>.filter(...).map(...) -> adds "map" etc.
+  let current: NodePath | null = callPath;
+
+  while (current) {
+    const parent = current.parentPath;
+    if (!parent) break;
+
+    const isMemberExpression =
+      parent.isMemberExpression() ||
+      // Optional chaining support (Babel provides OptionalMemberExpression)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (parent as any).isOptionalMemberExpression?.();
+
+    if (!isMemberExpression) break;
+    if (parent.get("object") !== current) break;
+
+    const propertyName = getStaticMemberName(parent);
+    if (!propertyName) break;
+
+    const maybeCall = parent.parentPath;
+    if (maybeCall?.isCallExpression() && maybeCall.get("callee") === parent) {
+      calledMethods.add(propertyName);
+      current = maybeCall;
+      continue;
+    }
+
+    break;
+  }
 }
 
 function isComparisonOperator(op: string): boolean {

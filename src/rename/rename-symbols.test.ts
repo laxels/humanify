@@ -271,10 +271,8 @@ const obj = { a };
 
   expect(result).toBe(
     `
-let userId = 1;
-const obj = {
-  a: userId
-};
+const value = 1;
+export { value as a };
 `.trim(),
   );
 });

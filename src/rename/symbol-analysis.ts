@@ -278,13 +278,51 @@ function inferNameStyle({
 }): NameStyle {
   if (isClass || declarationKind === "class") return "pascal";
 
-  // Conservative "constant" detection: only top-level, constant, primitive-literal consts.
-  // (Local consts inside functions are often normal variables; avoid ALL_CAPS noise.)
+  // Conservative "constant" detection:
+  // - only top-level primitive-literal consts
+  // - and only when they are directly exported as a declaration (`export const ...`)
+  //
+  // This avoids forcing ALL_CAPS for values that are exported via specifiers
+  // (`const a = 1; export { a };`) where the intent is less clear.
   const isTopLevel = declaringScope.path.isProgram();
-  const looksLikeConstant = isTopLevel && isConstant && isPrimitiveConstLiteral(binding);
+  const looksLikeConstant =
+    isTopLevel &&
+    isConstant &&
+    isPrimitiveConstLiteral(binding) &&
+    isDirectlyExportedDeclaration(binding);
 
   if (looksLikeConstant) return "upper_snake";
   return "camel";
+}
+
+function isDirectlyExportedDeclaration(binding: Binding): boolean {
+  // `export const a = ...`
+  if (binding.path.isVariableDeclarator()) {
+    const varDecl = binding.path.parentPath;
+    const exportDecl = varDecl?.parentPath;
+
+    if (
+      varDecl?.isVariableDeclaration() &&
+      exportDecl?.isExportNamedDeclaration() &&
+      exportDecl.node.declaration === varDecl.node
+    ) {
+      return true;
+    }
+  }
+
+  // `export function foo() {}` / `export class Foo {}`
+  if (binding.path.isFunctionDeclaration() || binding.path.isClassDeclaration()) {
+    const exportDecl = binding.path.parentPath;
+
+    if (
+      exportDecl?.isExportNamedDeclaration() &&
+      exportDecl.node.declaration === binding.path.node
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function resolveBindingForIdentifierPath(
