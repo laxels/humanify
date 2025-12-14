@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import babel from "../ast/babel/babel";
 import { ensureFileExists } from "../file-utils";
 import biome from "../format/biome";
+import { showProgress } from "../progress";
 import { renameIdentifiers } from "../rename/rename-identifiers";
 import { webcrack } from "../unpack/webcrack";
 import { verbose } from "../verbose";
@@ -34,7 +35,11 @@ export async function unminify(
     }
 
     const babelCleaned = await babel(code);
-    const renamed = await renameIdentifiers(babelCleaned, options);
+    const renamed = await renameIdentifiers(
+      babelCleaned,
+      options,
+      showProgress,
+    );
     const formattedCode = await biome(renamed);
 
     verbose.log("Input: ", code);
