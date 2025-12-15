@@ -56,15 +56,18 @@ The renaming logic now follows an **AST + scope graph + per-symbol dossiers + gl
 - **Analyze** (`src/rename/symbol-analysis.ts`)
   - Parse to AST (Babel)
   - Build a stable **symbol table** (each binding gets a stable symbolId)
-  - Build scope "chunks" (Program / Function / Class) for batching
+  - Build scope "chunks" (Program / Function / Class) for batching boundaries
   - Detect **unsafe scopes** (e.g., global `eval`, `with`, string-eval timers) and conservatively skip renames there
 - **Dossier extraction** (`src/rename/symbol-dossier.ts`)
   - For each symbol, produce a compact "dossier":
     - declaration kind/snippet
     - usage summary (call sites, member accesses, comparisons, etc.)
     - lightweight type-ish hints (array-like, promise-like, etc.)
-- **Batched LLM calls per scope** (`src/rename/rename-identifiers.ts`)
-  - One call per scope-chunk (many symbols at once)
+- **Job planning + batched LLM calls** (`src/rename/plan-rename-jobs.ts`, `src/rename/rename-identifiers.ts`)
+  - Start from the root Program scope and merge nested chunks to reduce duplicate context
+  - Split recursively along chunk boundaries when a job exceeds:
+    - `--maxSymbolsPerJob` (symbol dossier count cap)
+    - `--maxInputTokens` (input token cap, measured via Anthropic Token Count API)
   - Parallelized with a concurrency limit
   - Requests **top‑k candidates** + confidence for each symbolId
 - **Global reconciliation / constraint solving** (`src/rename/constraint-solver.ts`)
@@ -81,7 +84,9 @@ The renaming logic now follows an **AST + scope graph + per-symbol dossiers + gl
 
 - Uses extended thinking (default 50k budget) for better reasoning
 - Uses tool use to get structured responses (e.g. `{ newName: string }`)
-- Default model: `claude-sonnet-4-5`
+- Supports the Token Count API (`/v1/messages/count_tokens`) for batching decisions
+- Default model: `claude-sonnet-4-5` (override with `--model`)
+- Automatically enables the `context-1m-2025-08-07` beta header for Claude Sonnet 4.5 requests (1M context window)
 
 ### Test File Conventions
 
