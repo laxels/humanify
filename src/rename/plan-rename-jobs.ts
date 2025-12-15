@@ -1,3 +1,4 @@
+import { verbose } from "../verbose";
 import type { ScopeChunk } from "./symbol-analysis";
 import type { ScopeChunkId, SymbolDossier } from "./types";
 
@@ -29,17 +30,46 @@ export async function planRenameJobs({
   maxInputTokens,
   countInputTokens,
 }: PlanRenameJobsOptions): Promise<RenameJob[]> {
+  const start = performance.now();
+  let tokenCountCalls = 0;
+
+  const countWithTracking = async (job: RenameJob): Promise<number> => {
+    tokenCountCalls++;
+    return countInputTokens(job);
+  };
+
+  verbose.log(
+    `Job planning: ${chunks.length} chunks, maxSymbols=${maxSymbolsPerJob}, maxTokens=${maxInputTokens}`,
+  );
+
+  const treeStart = performance.now();
   const root = buildChunkTree(chunks, dossiersByChunkId);
-  if (!root) return [];
+  verbose.log(
+    `Built chunk tree in ${(performance.now() - treeStart).toFixed(0)}ms`,
+  );
+
+  if (!root) {
+    verbose.log("No root chunk found, returning empty jobs");
+    return [];
+  }
 
   const jobs: RenameJob[] = [];
+  const planStart = performance.now();
   await planSubtree({
     node: root,
     jobs,
     maxSymbolsPerJob,
     maxInputTokens,
-    countInputTokens,
+    countInputTokens: countWithTracking,
   });
+
+  const totalDuration = performance.now() - start;
+  const planDuration = performance.now() - planStart;
+
+  verbose.log(
+    `Job planning completed: ${jobs.length} jobs, ${tokenCountCalls} token count API calls, planning took ${planDuration.toFixed(0)}ms, total ${totalDuration.toFixed(0)}ms`,
+  );
+
   return jobs;
 }
 

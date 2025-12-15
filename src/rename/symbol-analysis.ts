@@ -7,6 +7,7 @@ import {
   type Scope,
   traverse,
 } from "../babel-traverse";
+import { timedAsync, timedSync, verbose } from "../verbose";
 import type {
   DeclarationKind,
   NameStyle,
@@ -71,18 +72,27 @@ export type AnalyzedCode = {
 };
 
 export async function analyzeCode(code: string): Promise<AnalyzedCode> {
-  const ast = await parseAsync(code, { sourceType: "unambiguous" });
+  verbose.log(
+    `Symbol analysis input size: ${(code.length / 1024).toFixed(1)}KB`,
+  );
+  const totalStart = performance.now();
+
+  const ast = await timedAsync("Parsing code to AST", () =>
+    parseAsync(code, { sourceType: "unambiguous" }),
+  );
   if (!ast) {
     throw new Error("Failed to parse code");
   }
 
-  const unsafeScopeUids = findUnsafeScopeUids(ast);
+  const unsafeScopeUids = timedSync("Finding unsafe scopes (eval/with)", () =>
+    findUnsafeScopeUids(ast),
+  );
 
   const {
     exportDeclarationRecords,
     exportedBindingIdentifiers,
     exportedBindings,
-  } = analyzeExports(ast);
+  } = timedSync("Analyzing exports", () => analyzeExports(ast));
 
   const symbols: SymbolInfo[] = [];
   const bindingToSymbolId = new WeakMap<Binding, SymbolId>();
@@ -91,6 +101,7 @@ export async function analyzeCode(code: string): Promise<AnalyzedCode> {
 
   let nextSymbolId = 1;
 
+  const traverseStart = performance.now();
   traverse(ast, {
     Program(path) {
       // Ensure the root Program chunk always exists, even if there are no top-level bindings.
@@ -158,11 +169,21 @@ export async function analyzeCode(code: string): Promise<AnalyzedCode> {
       });
     },
   });
+  const traverseDuration = performance.now() - traverseStart;
+  verbose.log(
+    `AST traversal for symbol table completed in ${traverseDuration.toFixed(0)}ms, found ${symbols.length} symbol(s)`,
+  );
 
   // Deterministic ordering for repeatable test expectations.
   symbols.sort((a, b) => a.start - b.start);
 
   const chunks = [...chunksByUid.values()].sort((a, b) => a.start - b.start);
+  verbose.log(`Created ${chunks.length} scope chunk(s)`);
+
+  const totalDuration = performance.now() - totalStart;
+  verbose.log(
+    `Symbol analysis completed in ${totalDuration.toFixed(0)}ms total`,
+  );
 
   return {
     ast,

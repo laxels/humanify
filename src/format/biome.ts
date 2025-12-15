@@ -1,7 +1,11 @@
 import { spawn } from "child_process";
+import { verbose } from "../verbose";
 
 export default async (code: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
+  verbose.log(`Biome input size: ${(code.length / 1024).toFixed(1)}KB`);
+  const start = performance.now();
+
+  const result = await new Promise<string>((resolve, reject) => {
     const biome = spawn(
       "bunx",
       ["biome", "format", "--stdin-file-path=file.js"],
@@ -34,4 +38,11 @@ export default async (code: string): Promise<string> => {
     biome.stdin.write(code);
     biome.stdin.end();
   });
+
+  const duration = performance.now() - start;
+  verbose.log(
+    `Biome format completed in ${duration.toFixed(0)}ms, output size: ${(result.length / 1024).toFixed(1)}KB`,
+  );
+
+  return result;
 };

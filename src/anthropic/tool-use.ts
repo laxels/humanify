@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { env } from "../env";
+import { verbose } from "../verbose";
 
 const client = new Anthropic({
   apiKey: env("ANTHROPIC_API_KEY"),
@@ -73,6 +74,12 @@ export async function anthropicToolUse<T>({
   maxTokens = DEFAULT_MAX_TOKENS,
   thinkingBudget = DEFAULT_THINKING_BUDGET,
 }: AnthropicToolUseOptions): Promise<T> {
+  verbose.log(
+    `Anthropic API call: model=${model}, maxTokens=${maxTokens}, thinkingBudget=${thinkingBudget}, contentLength=${content.length}`,
+  );
+
+  const start = performance.now();
+
   const response = await client.messages.create(
     {
       model,
@@ -88,6 +95,14 @@ export async function anthropicToolUse<T>({
     { headers: headersForModel(model) },
   );
 
+  const duration = performance.now() - start;
+  const inputTokens = response.usage?.input_tokens ?? 0;
+  const outputTokens = response.usage?.output_tokens ?? 0;
+
+  verbose.log(
+    `Anthropic API completed in ${(duration / 1000).toFixed(2)}s: input=${inputTokens} tokens, output=${outputTokens} tokens`,
+  );
+
   const toolUse = response.content.find(
     (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
   );
@@ -101,6 +116,10 @@ export async function anthropicToolUse<T>({
   return toolUse.input as T;
 }
 
+// Track token counting calls for diagnostics
+let tokenCountCallCount = 0;
+let tokenCountTotalTime = 0;
+
 export async function anthropicCountInputTokens({
   model = DEFAULT_MODEL,
   system,
@@ -112,9 +131,30 @@ export async function anthropicCountInputTokens({
   messages: Anthropic.Messages.MessageCountTokensParams["messages"];
   tools?: Anthropic.Messages.MessageCountTokensParams["tools"];
 }): Promise<number> {
+  const start = performance.now();
+
   const result = await client.messages.countTokens(
     { model, system, messages, tools },
     { headers: headersForModel(model) },
   );
+
+  const duration = performance.now() - start;
+  tokenCountCallCount++;
+  tokenCountTotalTime += duration;
+
+  // Log every 10th call to avoid spam, but always log if it's slow
+  if (tokenCountCallCount % 10 === 0 || duration > 500) {
+    verbose.log(
+      `Token count API: ${result.input_tokens} tokens in ${duration.toFixed(0)}ms (call #${tokenCountCallCount}, total time: ${(tokenCountTotalTime / 1000).toFixed(1)}s)`,
+    );
+  }
+
   return result.input_tokens;
+}
+
+export function getTokenCountStats(): {
+  callCount: number;
+  totalTimeMs: number;
+} {
+  return { callCount: tokenCountCallCount, totalTimeMs: tokenCountTotalTime };
 }

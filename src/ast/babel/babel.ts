@@ -2,6 +2,7 @@ import type { PluginItem } from "@babel/core";
 import * as t from "@babel/types";
 import beautifier from "babel-plugin-transform-beautifier";
 import { transformWithPlugins } from "../../babel-utils";
+import { verbose } from "../../verbose";
 
 const convertVoidToUndefined: PluginItem = {
   visitor: {
@@ -68,10 +69,21 @@ const makeNumbersLonger: PluginItem = {
   },
 };
 
-export default async (code: string): Promise<string> =>
-  transformWithPlugins(code, [
+export default async (code: string): Promise<string> => {
+  verbose.log(`Babel input size: ${(code.length / 1024).toFixed(1)}KB`);
+  const start = performance.now();
+
+  const result = await transformWithPlugins(code, [
     convertVoidToUndefined,
     flipComparisonsTheRightWayAround,
     makeNumbersLonger,
     beautifier,
   ]);
+
+  const duration = performance.now() - start;
+  verbose.log(
+    `Babel transform completed in ${duration.toFixed(0)}ms, output size: ${(result.length / 1024).toFixed(1)}KB`,
+  );
+
+  return result;
+};

@@ -1,4 +1,5 @@
 import { toIdentifier } from "@babel/types";
+import { verbose } from "../verbose";
 import type { NameCandidate, NameStyle, ScopeId, SymbolId } from "./types";
 
 export type SymbolForNaming = {
@@ -47,6 +48,8 @@ export function solveSymbolNames({
   suggestions: Map<SymbolId, NameCandidate[]>;
   occupiedByScope: Map<ScopeId, Set<string>>;
 }): Map<SymbolId, string> {
+  const totalStart = performance.now();
+
   const byScope = new Map<ScopeId, SymbolForNaming[]>();
   for (const s of symbols) {
     const list = byScope.get(s.scopeId) ?? [];
@@ -54,7 +57,15 @@ export function solveSymbolNames({
     byScope.set(s.scopeId, list);
   }
 
+  verbose.log(
+    `Constraint solver: ${symbols.length} symbols across ${byScope.size} scopes`,
+  );
+
   const result = new Map<SymbolId, string>();
+  let exactSolveCount = 0;
+  let heuristicSolveCount = 0;
+  let exactSolveTime = 0;
+  let heuristicSolveTime = 0;
 
   for (const [scopeId, scopeSymbols] of byScope) {
     const occupied = new Set<string>(occupiedByScope.get(scopeId) ?? []);
@@ -77,15 +88,39 @@ export function solveSymbolNames({
       candidatesBySymbol.set(s.symbolId, normalized);
     }
 
-    const assigned =
-      scopeSymbols.length <= 12
-        ? solveExact(scopeSymbols, candidatesBySymbol, occupied)
-        : solveHeuristic(scopeSymbols, candidatesBySymbol, occupied);
+    const solveStart = performance.now();
+    const useExact = scopeSymbols.length <= 12;
+
+    const assigned = useExact
+      ? solveExact(scopeSymbols, candidatesBySymbol, occupied)
+      : solveHeuristic(scopeSymbols, candidatesBySymbol, occupied);
+
+    const solveDuration = performance.now() - solveStart;
+
+    if (useExact) {
+      exactSolveCount++;
+      exactSolveTime += solveDuration;
+    } else {
+      heuristicSolveCount++;
+      heuristicSolveTime += solveDuration;
+    }
+
+    // Log slow scopes (> 100ms)
+    if (solveDuration > 100) {
+      verbose.log(
+        `Slow scope solve: ${scopeSymbols.length} symbols took ${solveDuration.toFixed(0)}ms (${useExact ? "exact DFS" : "heuristic"})`,
+      );
+    }
 
     for (const [symbolId, name] of assigned) {
       result.set(symbolId, name);
     }
   }
+
+  const totalDuration = performance.now() - totalStart;
+  verbose.log(
+    `Constraint solver completed in ${totalDuration.toFixed(0)}ms: ${exactSolveCount} exact solves (${exactSolveTime.toFixed(0)}ms), ${heuristicSolveCount} heuristic solves (${heuristicSolveTime.toFixed(0)}ms)`,
+  );
 
   return result;
 }

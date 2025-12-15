@@ -1,5 +1,6 @@
 import { parseAsync, transformFromAstAsync } from "@babel/core";
 import type { Node } from "@babel/types";
+import { createTimer, timedAsync, timedSync, verbose } from "../verbose";
 import { applyRenamePlan } from "./apply-renames";
 import {
   detachModuleInterfaceNames,
@@ -50,7 +51,14 @@ export async function renameSymbols(
     concurrency = 4,
   }: RenameSymbolsOptions,
 ): Promise<string> {
-  const analyzed = await analyzeCode(code);
+  const totalTimer = createTimer("Total renameSymbols");
+  totalTimer.start();
+
+  verbose.log(`renameSymbols input size: ${(code.length / 1024).toFixed(1)}KB`);
+
+  const analyzed = await timedAsync("Code analysis (AST + symbol table)", () =>
+    analyzeCode(code),
+  );
 
   const {
     ast,
@@ -64,8 +72,12 @@ export async function renameSymbols(
   const renameableSymbols = symbols.filter((s) => !s.isUnsafeToRename);
   const total = renameableSymbols.length;
 
+  verbose.log(
+    `Found ${symbols.length} total symbols, ${total} renameable, ${symbols.length - total} unsafe`,
+  );
+
   if (total === 0) {
-    // Preserve exact input formatting for unit tests and avoid extra churn.
+    verbose.log("No renameable symbols, returning original code");
     return code;
   }
 
@@ -77,6 +89,7 @@ export async function renameSymbols(
   }
 
   // Build dossiers for renameable symbols, grouped by chunk.
+  const dossierStart = performance.now();
   for (const s of renameableSymbols) {
     const dossier = buildSymbolDossier(s, { declarationSnippetMaxLength });
 
@@ -84,28 +97,49 @@ export async function renameSymbols(
     list.push(dossier);
     dossiersByChunkId.set(s.chunkId, list);
   }
+  verbose.log(
+    `Built ${total} symbol dossiers in ${(performance.now() - dossierStart).toFixed(0)}ms`,
+  );
 
   // Run scope-batch name suggestions (parallelized).
   let done = 0;
 
-  const jobs = await planRenameJobs({
-    chunks,
-    dossiersByChunkId,
-    maxSymbolsPerJob: Math.max(1, Math.floor(maxSymbolsPerJob)),
-    maxInputTokens: Math.max(1, Math.floor(maxInputTokens)),
-    countInputTokens,
-  });
+  const jobs = await timedAsync("Job planning (with token counting)", () =>
+    planRenameJobs({
+      chunks,
+      dossiersByChunkId,
+      maxSymbolsPerJob: Math.max(1, Math.floor(maxSymbolsPerJob)),
+      maxInputTokens: Math.max(1, Math.floor(maxInputTokens)),
+      countInputTokens,
+    }),
+  );
+
+  verbose.log(
+    `Planned ${jobs.length} LLM job(s) for ${total} symbols (concurrency: ${concurrency})`,
+  );
+
+  const llmTimer = createTimer(`LLM name suggestions (${jobs.length} jobs)`);
+  llmTimer.start();
 
   const suggestionResults = await mapWithConcurrency(
     jobs,
     concurrency,
-    async (job) => {
+    async (job, index) => {
+      verbose.log(
+        `Starting LLM job ${index + 1}/${jobs.length} (${job.symbols.length} symbols)`,
+      );
+      const jobStart = performance.now();
       const suggestions = await safeSuggestNames(suggestNames, job);
+      verbose.log(
+        `Completed LLM job ${index + 1}/${jobs.length} in ${(performance.now() - jobStart).toFixed(0)}ms`,
+      );
       done += job.symbols.length;
       onProgress?.(done, total);
       return suggestions;
     },
   );
+
+  llmTimer.stop();
 
   const candidatesBySymbolId = new Map<SymbolId, NameCandidate[]>();
   for (const suggestions of suggestionResults) {
@@ -138,11 +172,15 @@ export async function renameSymbols(
     });
   }
 
-  const solved = solveSymbolNames({
-    symbols: solverSymbols,
-    suggestions: candidatesBySymbolId,
-    occupiedByScope,
-  });
+  const solved = timedSync(
+    `Constraint solving (${solverSymbols.length} symbols, ${occupiedByScope.size} scopes)`,
+    () =>
+      solveSymbolNames({
+        symbols: solverSymbols,
+        suggestions: candidatesBySymbolId,
+        occupiedByScope,
+      }),
+  );
 
   // Build final rename plan (unsafe => unchanged).
   const renamePlan = new Map<SymbolId, string>();
@@ -155,27 +193,40 @@ export async function renameSymbols(
   }
 
   // AST safety rewrites before we apply renames.
-  detachModuleInterfaceNames(ast);
-  expandRenamedObjectShorthands({
-    ast,
-    bindingToSymbolId,
-    bindingIdentifierToSymbolId,
-    renamePlan,
-    originalNameBySymbolId,
-  });
+  timedSync("AST fix: detachModuleInterfaceNames", () =>
+    detachModuleInterfaceNames(ast),
+  );
+  timedSync("AST fix: expandRenamedObjectShorthands", () =>
+    expandRenamedObjectShorthands({
+      ast,
+      bindingToSymbolId,
+      bindingIdentifierToSymbolId,
+      renamePlan,
+      originalNameBySymbolId,
+    }),
+  );
 
   // Apply renames.
-  applyRenamePlan(symbols, renamePlan);
+  timedSync(`Applying ${renamePlan.size} renames via Babel`, () =>
+    applyRenamePlan(symbols, renamePlan),
+  );
 
   // Preserve named export interfaces post-rename.
-  preserveExportedDeclarations(ast, exportDeclarationRecords);
+  timedSync("AST fix: preserveExportedDeclarations", () =>
+    preserveExportedDeclarations(ast, exportDeclarationRecords),
+  );
 
-  const output = await stringifyAst(ast, code);
+  const output = await timedAsync("AST stringification", () =>
+    stringifyAst(ast, code),
+  );
 
   // Quick validation pass: ensure parseable output.
-  await assertParseable(output);
+  await timedAsync("Validation parse", () => assertParseable(output));
 
   onProgress?.(total, total);
+
+  totalTimer.stop();
+  verbose.log(`Output size: ${(output.length / 1024).toFixed(1)}KB`);
 
   return output;
 }
