@@ -18,7 +18,7 @@ bun run start -- <input-file> [options]
 
 - `--model <model>`: Which Claude model to use (default: `claude-sonnet-4-5`).
 - `--outputDir <dir>`: Output directory (default: `output`).
-- `--contextSize <n>`: Max characters of local code context included in each symbol dossier (default: `1000`).
+- `--declarationSnippetMaxLength <n>`: Max characters of local code context included in each symbol dossier (default: `1000`).
 - `--maxSymbolsPerJob <n>`: Max number of symbol dossiers per LLM naming job (default: `300`).
 - `--maxInputTokens <n>`: Max _input_ tokens per LLM naming job. If omitted, defaults to the selected model’s max input tokens.
   - For Claude Sonnet 4.5, Humanify automatically enables the `context-1m-2025-08-07` beta header and defaults this limit to `1_000_000`.

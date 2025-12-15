@@ -8,7 +8,7 @@ import { verbose } from "../verbose";
 
 export type UnminifyOptions = {
   model?: string;
-  contextWindowSize: number;
+  declarationSnippetMaxLength: number;
   maxSymbolsPerJob: number;
   maxInputTokens: number;
 };

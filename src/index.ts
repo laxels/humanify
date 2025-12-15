@@ -8,7 +8,7 @@ import { parseNumber } from "./number-utils";
 import { unminify } from "./pipeline/unminify";
 import { verbose } from "./verbose";
 
-const DEFAULT_CONTEXT_WINDOW_SIZE = 1000;
+const DEFAULT_DECLARATION_SNIPPET_MAX_LENGTH = 1000;
 // Dossier lists grow quickly with modern bundlers; 300 keeps calls efficient while still
 // leaving headroom for deep scope summaries and tool schema overhead.
 const DEFAULT_MAX_SYMBOLS_PER_JOB = 300;
@@ -16,7 +16,7 @@ const DEFAULT_MAX_SYMBOLS_PER_JOB = 300;
 type CliOptions = {
   model: string;
   outputDir: string;
-  contextSize: string;
+  declarationSnippetMaxLength: string;
   maxSymbolsPerJob?: string;
   maxInputTokens?: string;
   verbose?: boolean;
@@ -28,9 +28,9 @@ const program = cli()
   .option("-m, --model <model>", "The model to use", DEFAULT_MODEL)
   .option("-o, --outputDir <output>", "The output directory", "output")
   .option(
-    "--contextSize <contextSize>",
-    "Max characters of code context included in symbol dossiers",
-    `${DEFAULT_CONTEXT_WINDOW_SIZE}`,
+    "--declarationSnippetMaxLength <declarationSnippetMaxLength>",
+    "Max characters of an identifier's declaration snippet included in its symbol dossier",
+    `${DEFAULT_DECLARATION_SNIPPET_MAX_LENGTH}`,
   )
   .option(
     "--maxSymbolsPerJob <n>",
@@ -50,7 +50,9 @@ const program = cli()
       verbose.enabled = true;
     }
 
-    const contextWindowSize = parseNumber(opts.contextSize);
+    const declarationSnippetMaxLength = parseNumber(
+      opts.declarationSnippetMaxLength,
+    );
     const maxSymbolsPerJob = parseNumber(
       opts.maxSymbolsPerJob ?? `${DEFAULT_MAX_SYMBOLS_PER_JOB}`,
     );
@@ -61,7 +63,7 @@ const program = cli()
 
     await unminify(filename, opts.outputDir, {
       model: opts.model,
-      contextWindowSize,
+      declarationSnippetMaxLength,
       maxSymbolsPerJob,
       maxInputTokens,
     });

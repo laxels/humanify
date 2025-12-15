@@ -98,12 +98,12 @@ export async function renameIdentifiers(
   code: string,
   {
     model,
-    contextWindowSize,
+    declarationSnippetMaxLength,
     maxSymbolsPerJob,
     maxInputTokens,
   }: {
     model?: string;
-    contextWindowSize: number;
+    declarationSnippetMaxLength: number;
     maxSymbolsPerJob: number;
     maxInputTokens: number;
   },
@@ -162,7 +162,7 @@ export async function renameIdentifiers(
   };
 
   return await renameSymbols(code, {
-    contextWindowSize,
+    declarationSnippetMaxLength,
     suggestNames,
     countInputTokens,
     maxSymbolsPerJob,

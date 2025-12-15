@@ -20,7 +20,7 @@ import type {
 } from "./types";
 
 export type RenameSymbolsOptions = {
-  contextWindowSize: number;
+  declarationSnippetMaxLength: number;
   suggestNames: SuggestNames;
   countInputTokens: (job: {
     chunkId: string;
@@ -41,7 +41,7 @@ export type RenameSymbolsOptions = {
 export async function renameSymbols(
   code: string,
   {
-    contextWindowSize,
+    declarationSnippetMaxLength,
     suggestNames,
     countInputTokens,
     maxSymbolsPerJob,
@@ -78,7 +78,7 @@ export async function renameSymbols(
 
   // Build dossiers for renameable symbols, grouped by chunk.
   for (const s of renameableSymbols) {
-    const dossier = buildSymbolDossier(s, { contextWindowSize });
+    const dossier = buildSymbolDossier(s, { declarationSnippetMaxLength });
 
     const list = dossiersByChunkId.get(s.chunkId) ?? [];
     list.push(dossier);

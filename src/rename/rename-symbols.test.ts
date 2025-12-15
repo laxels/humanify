@@ -43,7 +43,7 @@ test("no-op returns the same code", async () => {
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestNoOp(),
       concurrency: 1,
     }),
@@ -55,7 +55,7 @@ test("no-op returns the same empty code", async () => {
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestNoOp(),
       concurrency: 1,
     }),
@@ -67,7 +67,7 @@ test("renames a simple variable", async () => {
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestFromMap({ a: "b" }),
       concurrency: 1,
     }),
@@ -92,7 +92,7 @@ let b = 1;
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestFromMap({ a: "b" }),
       concurrency: 1,
     }),
@@ -117,7 +117,7 @@ let c = 1;
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestFromSequence(["c", "d"]),
       concurrency: 1,
     }),
@@ -139,7 +139,7 @@ class _Foo {
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestFromMap({ Foo: "_Foo" }),
       concurrency: 1,
     }),
@@ -166,7 +166,7 @@ e.b;
   expect(
     await renameSymbols(code, {
       ...defaultJobPlanningOptions,
-      contextWindowSize: 200,
+      declarationSnippetMaxLength: 200,
       suggestNames: suggestFromMap({ c: "d", a: "e" }),
       concurrency: 1,
     }),
@@ -177,7 +177,7 @@ test("should handle invalid identifiers", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "this.kLength" }),
     concurrency: 1,
   });
@@ -188,7 +188,7 @@ test("should handle space in identifier name", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "foo bar" }),
     concurrency: 1,
   });
@@ -199,7 +199,7 @@ test("should handle reserved identifiers", async () => {
   const code = `let a = 1`;
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "static" }),
     concurrency: 1,
   });
@@ -214,7 +214,7 @@ let b = 1;
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "foo", b: "foo" }),
     concurrency: 1,
   });
@@ -235,7 +235,7 @@ let bar = 2;
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ foo: "bar", bar: "bar" }),
     concurrency: 1,
   });
@@ -260,7 +260,7 @@ function outer() {
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 400,
+    declarationSnippetMaxLength: 400,
     suggestNames: suggestFromMap({ a: "value", b: "value" }),
     concurrency: 1,
   });
@@ -285,7 +285,7 @@ const obj = { a };
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "userId" }),
     concurrency: 1,
   });
@@ -307,7 +307,7 @@ const { a } = obj;
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "userId" }),
     concurrency: 1,
   });
@@ -330,7 +330,7 @@ export function a() {
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 400,
+    declarationSnippetMaxLength: 400,
     suggestNames: suggestFromMap({ a: "getValue" }),
     concurrency: 1,
   });
@@ -352,7 +352,7 @@ export const a = 1;
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "maxRetries" }),
     concurrency: 1,
   });
@@ -374,7 +374,7 @@ export { a };
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "value" }),
     concurrency: 1,
   });
@@ -395,7 +395,7 @@ console.log(a);
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 200,
+    declarationSnippetMaxLength: 200,
     suggestNames: suggestFromMap({ a: "value" }),
     concurrency: 1,
   });
@@ -419,7 +419,7 @@ function foo() {
 
   const result = await renameSymbols(code, {
     ...defaultJobPlanningOptions,
-    contextWindowSize: 400,
+    declarationSnippetMaxLength: 400,
     suggestNames: suggestFromMap({ a: "value", foo: "doThing" }),
     concurrency: 1,
   });
@@ -439,7 +439,9 @@ function foo(arr, cb) {
   const arrSymbol = analyzed.symbols.find((s) => s.originalName === "arr");
   expect(arrSymbol).toBeTruthy();
 
-  const dossier = buildSymbolDossier(arrSymbol!, { contextWindowSize: 400 });
+  const dossier = buildSymbolDossier(arrSymbol!, {
+    declarationSnippetMaxLength: 400,
+  });
   expect(dossier.usageSummary.calledMethods).toEqual(["filter", "map"]);
   expect(dossier.typeHints.some((h) => h.includes("array-like"))).toBe(true);
 });

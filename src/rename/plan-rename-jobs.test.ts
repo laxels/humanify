@@ -14,7 +14,7 @@ async function buildPlannerInputs(code: string): Promise<{
 
   const dossiersByChunkId = new Map<string, SymbolDossier[]>();
   for (const s of renameable) {
-    const dossier = buildSymbolDossier(s, { contextWindowSize: 400 });
+    const dossier = buildSymbolDossier(s, { declarationSnippetMaxLength: 400 });
     const list = dossiersByChunkId.get(s.chunkId) ?? [];
     list.push(dossier);
     dossiersByChunkId.set(s.chunkId, list);

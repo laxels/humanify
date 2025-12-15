@@ -5,11 +5,11 @@ import type { SymbolDossier, SymbolUsageSummary } from "./types";
 
 export function buildSymbolDossier(
   symbol: SymbolInfo,
-  { contextWindowSize }: { contextWindowSize: number },
+  { declarationSnippetMaxLength }: { declarationSnippetMaxLength: number },
 ): SymbolDossier {
   const declarationSnippet = truncate(
     getDeclarationSnippet(symbol),
-    Math.min(400, contextWindowSize),
+    Math.min(400, declarationSnippetMaxLength),
   );
 
   const usageSummary = buildUsageSummary(symbol);
