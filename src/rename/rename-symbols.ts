@@ -235,29 +235,19 @@ async function safeSuggestNames(
   suggestNames: SuggestNames,
   job: { chunkId: string; scopeSummary: string; symbols: SymbolDossier[] },
 ): Promise<SymbolNameSuggestion[]> {
-  try {
-    const suggestions = await suggestNames(job);
+  const suggestions = await suggestNames(job);
 
-    // Be defensive: ensure shape and that we only include known symbols.
-    const known = new Set(job.symbols.map((s) => s.symbolId));
-    const cleaned: SymbolNameSuggestion[] = [];
+  // Be defensive: ensure shape and that we only include known symbols.
+  const known = new Set(job.symbols.map((s) => s.symbolId));
+  const cleaned: SymbolNameSuggestion[] = [];
 
-    for (const s of suggestions ?? []) {
-      if (!known.has(s.symbolId)) continue;
-      const candidates = Array.isArray(s.candidates) ? s.candidates : [];
-      cleaned.push({ symbolId: s.symbolId, candidates });
-    }
-
-    return cleaned;
-  } catch (err) {
-    console.error("Failed to suggest names for chunk", job.chunkId, err);
-    // If a batch fails, fall back to "no suggestions" for that chunk.
-    // The solver will keep original names for missing suggestions.
-    return job.symbols.map((s) => ({
-      symbolId: s.symbolId,
-      candidates: [{ name: s.originalName, confidence: 0 }],
-    }));
+  for (const s of suggestions ?? []) {
+    if (!known.has(s.symbolId)) continue;
+    const candidates = Array.isArray(s.candidates) ? s.candidates : [];
+    cleaned.push({ symbolId: s.symbolId, candidates });
   }
+
+  return cleaned;
 }
 
 async function mapWithConcurrency<T, R>(
