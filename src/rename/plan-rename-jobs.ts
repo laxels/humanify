@@ -1,4 +1,3 @@
-import pLimit from "p-limit";
 import { verbose } from "../verbose";
 import type { ScopeChunk } from "./symbol-analysis";
 import type { ScopeChunkId, SymbolDossier } from "./types";
@@ -203,14 +202,21 @@ async function planSubtree({
     jobs.push(...directJobs);
   }
 
-  for (const child of node.children) {
-    await planSubtree({
-      node: child,
-      jobs,
-      maxSymbolsPerJob,
-      maxInputTokens,
-      countInputTokens,
-    });
+  const childJobArrays = await Promise.all(
+    node.children.map(async (child) => {
+      const childJobs: RenameJob[] = [];
+      await planSubtree({
+        node: child,
+        jobs: childJobs,
+        maxSymbolsPerJob,
+        maxInputTokens,
+        countInputTokens,
+      });
+      return childJobs;
+    }),
+  );
+  for (const childJobs of childJobArrays) {
+    jobs.push(...childJobs);
   }
 }
 
@@ -251,19 +257,16 @@ async function planSymbolBatches({
     batches.push(symbols.slice(i, i + maxSymbolsPerJob));
   }
 
-  const limit = pLimit(100);
   verbose.log(`Planning ${batches.length} symbol batches`);
   const batchResults = await Promise.all(
     batches.map((batch, batchIndex) =>
-      limit(() =>
-        ensureTokenFit({
-          chunkIdPrefix: `${chunkIdPrefix}_${batchIndex}`,
-          scopeSummary,
-          symbols: batch,
-          maxInputTokens,
-          countInputTokens,
-        }),
-      ),
+      ensureTokenFit({
+        chunkIdPrefix: `${chunkIdPrefix}_${batchIndex}`,
+        scopeSummary,
+        symbols: batch,
+        maxInputTokens,
+        countInputTokens,
+      }),
     ),
   );
   return batchResults.flat();

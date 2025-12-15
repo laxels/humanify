@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import pLimit from "p-limit";
 import { env } from "../env";
 import { verbose } from "../verbose";
 
@@ -119,6 +120,7 @@ export async function anthropicToolUse<T>({
 // Track token counting calls for diagnostics
 let tokenCountCallCount = 0;
 let tokenCountTotalTime = 0;
+const countInputTokensLimit = pLimit(100);
 
 export async function anthropicCountInputTokens({
   model = DEFAULT_MODEL,
@@ -131,25 +133,27 @@ export async function anthropicCountInputTokens({
   messages: Anthropic.Messages.MessageCountTokensParams["messages"];
   tools?: Anthropic.Messages.MessageCountTokensParams["tools"];
 }): Promise<number> {
-  const start = performance.now();
+  return await countInputTokensLimit(async () => {
+    const start = performance.now();
 
-  const result = await client.messages.countTokens(
-    { model, system, messages, tools },
-    { headers: headersForModel(model) },
-  );
-
-  const duration = performance.now() - start;
-  tokenCountCallCount++;
-  tokenCountTotalTime += duration;
-
-  // Log every 10th call to avoid spam, but always log if it's slow
-  if (tokenCountCallCount % 10 === 0 || duration > 500) {
-    verbose.log(
-      `Token count API: ${result.input_tokens} tokens in ${duration.toFixed(0)}ms (call #${tokenCountCallCount}, total time: ${(tokenCountTotalTime / 1000).toFixed(1)}s)`,
+    const result = await client.messages.countTokens(
+      { model, system, messages, tools },
+      { headers: headersForModel(model) },
     );
-  }
 
-  return result.input_tokens;
+    const duration = performance.now() - start;
+    tokenCountCallCount++;
+    tokenCountTotalTime += duration;
+
+    // Log every 10th call to avoid spam, but always log if it's slow
+    if (tokenCountCallCount % 10 === 0 || duration > 500) {
+      verbose.log(
+        `Token count API: ${result.input_tokens} tokens in ${duration.toFixed(0)}ms (call #${tokenCountCallCount}, total time: ${(tokenCountTotalTime / 1000).toFixed(1)}s)`,
+      );
+    }
+
+    return result.input_tokens;
+  });
 }
 
 export function getTokenCountStats(): {
