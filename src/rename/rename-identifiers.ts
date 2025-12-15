@@ -9,7 +9,7 @@ import { renameSymbols } from "./rename-symbols";
 import type { SuggestNames, SymbolNameSuggestion } from "./types";
 
 const TOP_K = 5;
-const DEFAULT_CONCURRENCY = 100;
+const DEFAULT_CONCURRENCY = 20;
 
 type AnthropicBatchRenameResponse = {
   suggestions: SymbolNameSuggestion[];
