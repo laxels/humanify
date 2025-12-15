@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import { verbose } from "../verbose";
 import type { ScopeChunk } from "./symbol-analysis";
 import type { ScopeChunkId, SymbolDossier } from "./types";
@@ -250,19 +251,22 @@ async function planSymbolBatches({
     batches.push(symbols.slice(i, i + maxSymbolsPerJob));
   }
 
-  const jobs: RenameJob[] = [];
-  let batchIndex = 0;
-  for (const batch of batches) {
-    const planned = await ensureTokenFit({
-      chunkIdPrefix: `${chunkIdPrefix}_${batchIndex++}`,
-      scopeSummary,
-      symbols: batch,
-      maxInputTokens,
-      countInputTokens,
-    });
-    jobs.push(...planned);
-  }
-  return jobs;
+  const limit = pLimit(100);
+  verbose.log(`Planning ${batches.length} symbol batches`);
+  const batchResults = await Promise.all(
+    batches.map((batch, batchIndex) =>
+      limit(() =>
+        ensureTokenFit({
+          chunkIdPrefix: `${chunkIdPrefix}_${batchIndex}`,
+          scopeSummary,
+          symbols: batch,
+          maxInputTokens,
+          countInputTokens,
+        }),
+      ),
+    ),
+  );
+  return batchResults.flat();
 }
 
 async function ensureTokenFit({
