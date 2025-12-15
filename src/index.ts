@@ -17,7 +17,7 @@ type CliOptions = {
   model: string;
   outputDir: string;
   declarationSnippetMaxLength: string;
-  maxSymbolsPerJob?: string;
+  maxSymbolsPerJob: string;
   maxInputTokens?: string;
   verbose?: boolean;
 };
@@ -53,9 +53,7 @@ const program = cli()
     const declarationSnippetMaxLength = parseNumber(
       opts.declarationSnippetMaxLength,
     );
-    const maxSymbolsPerJob = parseNumber(
-      opts.maxSymbolsPerJob ?? `${DEFAULT_MAX_SYMBOLS_PER_JOB}`,
-    );
+    const maxSymbolsPerJob = parseNumber(opts.maxSymbolsPerJob);
     const maxInputTokens =
       opts.maxInputTokens != null
         ? parseNumber(opts.maxInputTokens)
