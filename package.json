@@ -1,7 +1,8 @@
 {
   "name": "humanify",
-  "version": "2.2.2",
-  "description": "",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
   "scripts": {
     "start": "bun run src/index.ts",
     "build": "bun build --compile --minify --sourcemap --bytecode src/index.ts --outfile dist/humanify",
@@ -11,29 +12,6 @@
     "test:e2e": "bun run build && bun test ./src/**/*.test.e2e.ts",
     "lint": "biome check --write"
   },
-  "bin": {
-    "humanify": "dist/humanify"
-  },
-  "type": "module",
-  "keywords": [
-    "humanify",
-    "decompiler",
-    "decompile",
-    "unobfuscate",
-    "unobfuscator",
-    "deobfuscate",
-    "deobfuscator",
-    "decompile",
-    "decompiler",
-    "reverse engineering",
-    "unminify",
-    "unuglify",
-    "llm",
-    "anthropic",
-    "claude"
-  ],
-  "author": "Jesse Luoto",
-  "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@babel/core": "^7.28.5",
@@ -51,6 +29,5 @@
     "@types/bun": "latest",
     "@types/lodash": "^4.17.21",
     "typescript": "^5.9.3"
-  },
-  "private": true
+  }
 }
