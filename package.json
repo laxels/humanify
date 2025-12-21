@@ -6,7 +6,7 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "build": "bun build --compile --minify --sourcemap --bytecode src/index.ts --outfile=dist/humanify",
-    "validate": "cross-env FORCE_COLOR=1 run-p --aggregate-output --print-label typecheck lint test:unit",
+    "validate": "concurrently --group --names typecheck,lint,test --prefix name --prefix-colors auto \"bun run typecheck\" \"bun run lint\" \"bun run test:unit\"",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write --diagnostic-level=error",
     "test:unit": "bun test ./src/**/*.test.ts",
@@ -28,8 +28,8 @@
     "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
     "@types/lodash": "^4.17.21",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "npm-run-all2": "^8.0.4",
     "typescript": "^5.9.3"
   }
 }
