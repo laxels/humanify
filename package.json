@@ -5,12 +5,12 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.ts",
-    "build": "bun build --compile --minify --sourcemap --bytecode src/index.ts --outfile dist/humanify",
-    "validate": "bun run typecheck && bun run test:unit && bun run lint",
+    "build": "bun build --compile --minify --sourcemap --bytecode src/index.ts --outfile=dist/humanify",
+    "validate": "cross-env FORCE_COLOR=1 run-p --aggregate-output --print-label typecheck lint test:unit",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check --write --diagnostic-level=error",
     "test:unit": "bun test ./src/**/*.test.ts",
-    "test:e2e": "bun run build && bun test ./src/**/*.test.e2e.ts",
-    "lint": "biome check --write"
+    "test:e2e": "bun run build && bun test ./src/**/*.test.e2e.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -28,6 +28,8 @@
     "@types/babel__core": "^7.20.5",
     "@types/bun": "latest",
     "@types/lodash": "^4.17.21",
+    "cross-env": "^10.1.0",
+    "npm-run-all2": "^8.0.4",
     "typescript": "^5.9.3"
   }
 }
